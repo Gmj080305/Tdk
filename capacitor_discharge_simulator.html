@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTAS — Capacitor Transient Analysis Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Exo+2:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030508;--bg2:#070c12;--bg3:#0c1018;--bg4:#111825;--bg5:#16202e;
+  --b1:#1a2235;--b2:#253345;--b3:#334466;
+  --c:#00d4ff;--c2:rgba(0,212,255,.12);--c3:rgba(0,212,255,.05);
+  --a:#ffaa00;--a2:rgba(255,170,0,.12);--a3:rgba(255,170,0,.05);
+  --g:#00ff80;--g2:rgba(0,255,128,.12);--g3:rgba(0,255,128,.05);
+  --r:#ff3355;--r2:rgba(255,51,85,.12);
+  --p:#a855f7;--p2:rgba(168,85,247,.12);
+  --y:#ffd700;--y2:rgba(255,215,0,.12);
+  --o:#ff6633;--o2:rgba(255,102,51,.12);
+  --tx:#c0d4e8;--tx2:#7a90a8;--tx3:#3a4f66;--txb:#e8f4ff;
+  --mono:'Space Mono',monospace;--disp:'Rajdhani',sans-serif;--body:'Exo 2',sans-serif;
+  --r4:4px;--r8:8px;--r12:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--tx);font-family:var(--body);font-size:14px;
+  line-height:1.6;min-height:100vh;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(0,212,255,.04) 0%,transparent 70%),
+    linear-gradient(rgba(0,212,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,.018) 1px,transparent 1px);
+  background-size:100% 100%,44px 44px,44px 44px;
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(3,5,8,.95);border-bottom:1px solid var(--b1);
+  backdrop-filter:blur(12px);display:flex;align-items:center;gap:0;
+}
+.nav-logo{
+  padding:0 20px;font-family:var(--disp);font-size:18px;font-weight:700;
+  color:var(--c);letter-spacing:2px;white-space:nowrap;border-right:1px solid var(--b1);
+  height:52px;display:flex;align-items:center;gap:8px;
+}
+.nav-logo span{color:var(--a);font-size:11px;font-weight:400;font-family:var(--mono);letter-spacing:1px;margin-top:2px}
+.nav-tabs{display:flex;overflow-x:auto;scrollbar-width:none;flex:1}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{
+  padding:0 16px;height:52px;cursor:pointer;font-family:var(--disp);font-size:13px;
+  font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);
+  border:none;background:none;border-bottom:2px solid transparent;
+  transition:all .2s;white-space:nowrap;
+}
+.nav-tab:hover{color:var(--tx);background:rgba(0,212,255,.04)}
+.nav-tab.active{color:var(--c);border-bottom-color:var(--c);background:var(--c3)}
+.nav-right{padding:0 16px;font-family:var(--mono);font-size:10px;color:var(--tx3);white-space:nowrap;display:flex;align-items:center;gap:8px;border-left:1px solid var(--b1);height:52px}
+#status-dot{width:7px;height:7px;border-radius:50%;background:var(--g);animation:blink 1.4s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* SECTIONS */
+.section{display:none;padding:70px 0 40px;min-height:100vh;position:relative;z-index:1}
+.section.active{display:block}
+.container{max-width:1400px;margin:0 auto;padding:0 24px}
+
+/* OVERVIEW */
+.hero{padding:60px 0 40px;text-align:center}
+.hero-tag{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--c);text-transform:uppercase;margin-bottom:16px;opacity:.8}
+.hero h1{font-family:var(--disp);font-size:clamp(32px,5vw,58px);font-weight:700;color:var(--txb);line-height:1.1;margin-bottom:16px}
+.hero h1 span{color:var(--c)}
+.hero p{font-size:16px;color:var(--tx2);max-width:640px;margin:0 auto 32px;line-height:1.7}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:40px}
+.badge{
+  padding:4px 12px;border-radius:20px;font-family:var(--mono);font-size:10px;letter-spacing:1px;
+  background:var(--bg3);border:1px solid var(--b2);color:var(--tx2);
+}
+.badge.c{border-color:rgba(0,212,255,.4);color:var(--c);background:var(--c3)}
+.badge.a{border-color:rgba(255,170,0,.4);color:var(--a);background:var(--a3)}
+.badge.g{border-color:rgba(0,255,128,.4);color:var(--g);background:var(--g3)}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:40px}
+.feat-card{
+  background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r8);
+  padding:20px;transition:border-color .2s,background .2s;
+}
+.feat-card:hover{border-color:var(--b3);background:var(--bg3)}
+.feat-card h3{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--txb);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.feat-icon{font-size:18px}
+.feat-card p{font-size:13px;color:var(--tx2);line-height:1.5}
+
+/* GRID LAYOUTS */
+.sim-layout{display:grid;grid-template-columns:280px 1fr 220px;gap:16px;align-items:start}
+@media(max-width:1100px){.sim-layout{grid-template-columns:240px 1fr;}.sim-results{display:none}}
+.panel{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r8);padding:16px}
+.panel-title{
+  font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:2px;
+  text-transform:uppercase;color:var(--tx2);margin-bottom:14px;
+  padding-bottom:8px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px;
+}
+.panel-title .dot{width:6px;height:6px;border-radius:50%;background:var(--c)}
+
+/* CONTROLS */
+.ctrl-group{margin-bottom:14px}
+.ctrl-label{font-family:var(--mono);font-size:10px;color:var(--tx2);letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between}
+.ctrl-label span{color:var(--c);font-weight:700}
+input[type=range]{
+  width:100%;accent-color:var(--c);background:transparent;
+  -webkit-appearance:none;height:4px;border-radius:2px;
+  background:linear-gradient(to right,var(--c) var(--val,50%),var(--b2) var(--val,50%));
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);cursor:pointer}
+.ctrl-num{
+  width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r4);
+  color:var(--c);font-family:var(--mono);font-size:12px;padding:6px 8px;margin-top:4px;
+  outline:none;transition:border-color .2s;
+}
+.ctrl-num:focus{border-color:var(--c)}
+select{
+  width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r4);
+  color:var(--tx);font-family:var(--body);font-size:13px;padding:8px;outline:none;
+  cursor:pointer;transition:border-color .2s;
+}
+select:focus{border-color:var(--c)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 16px;border-radius:var(--r4);border:none;cursor:pointer;
+  font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:1px;
+  text-transform:uppercase;transition:all .15s;
+}
+.btn-c{background:var(--c);color:#000}
+.btn-c:hover{background:var(--txb);box-shadow:0 0 12px var(--c)}
+.btn-outline{background:transparent;color:var(--c);border:1px solid var(--c)}
+.btn-outline:hover{background:var(--c2)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-a{background:var(--a);color:#000}
+.btn-a:hover{box-shadow:0 0 12px var(--a)}
+
+/* CANVAS */
+.canvas-wrap{position:relative;border-radius:var(--r8);overflow:hidden;border:1px solid var(--b2)}
+canvas{display:block;width:100%;border-radius:var(--r8)}
+.canvas-overlay{position:absolute;inset:0;pointer-events:none}
+
+/* OSCILLOSCOPE */
+.scope-outer{
+  background:#000;border:2px solid #333;border-radius:12px;
+  box-shadow:0 0 40px rgba(0,255,80,.06),inset 0 0 60px rgba(0,0,0,.5);
+  overflow:hidden;
+}
+.scope-screen{
+  background:radial-gradient(ellipse 100% 100% at 50% 50%,#001a00 0%,#000600 60%,#000 100%);
+  position:relative;cursor:crosshair;
+}
+#scope-canvas{display:block;width:100%}
+.scope-controls{
+  background:#0a0f0a;border-top:1px solid #1a2a1a;
+  display:grid;grid-template-columns:repeat(5,1fr) auto;gap:12px;padding:14px 16px;
+  align-items:center;
+}
+.scope-knob{display:flex;flex-direction:column;gap:4px}
+.scope-knob label{font-family:var(--mono);font-size:9px;color:#4a7a4a;letter-spacing:1px;text-transform:uppercase}
+.scope-knob select,.scope-knob input[type=range]{
+  background:#0d140d;border:1px solid #1a3a1a;color:#00ff80;
+  font-family:var(--mono);font-size:11px;
+}
+.scope-readout{
+  font-family:var(--mono);font-size:10px;color:#00ff80;
+  text-align:right;line-height:1.8;white-space:nowrap;
+}
+.scope-btn{
+  background:#0d140d;border:1px solid #1a3a1a;color:#00ff80;
+  font-family:var(--mono);font-size:10px;padding:6px 10px;
+  border-radius:4px;cursor:pointer;letter-spacing:1px;transition:all .15s;
+}
+.scope-btn:hover,.scope-btn.active{background:#003300;border-color:#00ff80;box-shadow:0 0 8px rgba(0,255,80,.3)}
+
+/* PARAM RESULTS */
+.param-card{
+  background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r4);
+  padding:10px 12px;margin-bottom:8px;
+}
+.param-name{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:1.5px;margin-bottom:3px}
+.param-val{font-family:var(--mono);font-size:14px;color:var(--c);font-weight:700}
+.param-val.a{color:var(--a)}
+.param-val.g{color:var(--g)}
+.param-val.r{color:var(--r)}
+.damping-badge{
+  padding:6px 12px;border-radius:var(--r4);font-family:var(--mono);font-size:11px;
+  letter-spacing:1px;text-align:center;margin-bottom:12px;font-weight:700;
+}
+
+/* SWITCH CARDS */
+.switch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.sw-card{
+  background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r8);
+  padding:0;overflow:hidden;transition:border-color .2s,transform .15s;cursor:pointer;
+}
+.sw-card:hover{border-color:var(--b3);transform:translateY(-2px)}
+.sw-card.selected{border-color:var(--c);box-shadow:0 0 20px rgba(0,212,255,.12)}
+.sw-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--b1)}
+.sw-name{font-family:var(--disp);font-size:15px;font-weight:700;color:var(--txb)}
+.sw-cat{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:12px}
+.sw-anim{height:140px;background:var(--bg);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--b1);overflow:hidden;position:relative}
+.sw-anim svg{width:100%;height:100%}
+.sw-specs{padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sw-spec{display:flex;flex-direction:column}
+.sw-spec-k{font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:1px}
+.sw-spec-v{font-family:var(--mono);font-size:11px;color:var(--tx);font-weight:700}
+.sw-footer{padding:10px 16px;border-top:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.feasibility{font-family:var(--mono);font-size:9px;color:var(--tx3);flex:1}
+.rating-bar{display:flex;gap:2px}
+.rb{width:8px;height:8px;border-radius:1px;background:var(--bg4);transition:background .3s}
+.rb.on{background:var(--c)}
+
+/* SCHEMATIC */
+.schematic-layout{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.schematic-layout{grid-template-columns:1fr}}
+#schematic-svg{width:100%;height:auto;display:block}
+
+/* MATRIX */
+.matrix-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.filter-btn{
+  padding:5px 14px;border-radius:20px;border:1px solid var(--b2);
+  background:var(--bg3);color:var(--tx2);font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;cursor:pointer;transition:all .15s;
+}
+.filter-btn:hover{border-color:var(--b3);color:var(--tx)}
+.filter-btn.active{background:var(--c2);border-color:var(--c);color:var(--c)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{
+  background:var(--bg3);padding:10px 12px;text-align:left;
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--tx3);
+  border-bottom:2px solid var(--b1);cursor:pointer;user-select:none;white-space:nowrap;
+  position:sticky;top:52px;
+}
+thead th:hover{color:var(--c);background:var(--bg4)}
+thead th.sorted{color:var(--c)}
+thead th::after{content:'';margin-left:4px;opacity:.4}
+thead th.asc::after{content:'↑';opacity:1;color:var(--c)}
+thead th.desc::after{content:'↓';opacity:1;color:var(--c)}
+tbody tr{border-bottom:1px solid var(--b1);transition:background .1s}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:9px 12px;vertical-align:top}
+.cell-name{font-family:var(--disp);font-size:13px;font-weight:600;color:var(--txb);white-space:nowrap}
+.cell-cat{font-family:var(--mono);font-size:9px;margin-top:2px;letter-spacing:1px}
+.cell-mono{font-family:var(--mono);font-size:11px}
+.cell-c{color:var(--g)}
+.cell-w{color:var(--a)}
+.cell-r{color:var(--r)}
+.cell-m{color:var(--tx2)}
+.rec-star{color:var(--a);font-size:12px}
+
+/* THEORY */
+.theory-layout{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.theory-layout{grid-template-columns:1fr}}
+.theory-nav{position:sticky;top:70px;background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r8);padding:12px;overflow:hidden}
+.theory-nav a{display:block;padding:7px 10px;border-radius:var(--r4);font-size:13px;color:var(--tx2);text-decoration:none;transition:all .15s;border-left:2px solid transparent;font-family:var(--body)}
+.theory-nav a:hover{color:var(--tx);background:var(--bg3);border-left-color:var(--b3)}
+.theory-nav a.active{color:var(--c);background:var(--c3);border-left-color:var(--c)}
+.theory-content h2{font-family:var(--disp);font-size:26px;font-weight:700;color:var(--txb);margin-bottom:8px;padding-top:8px}
+.theory-content h3{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--c);margin:24px 0 10px}
+.theory-content h4{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--a);margin:18px 0 8px}
+.theory-content p{color:var(--tx);line-height:1.8;margin-bottom:12px}
+.theory-content hr{border:none;border-top:1px solid var(--b1);margin:28px 0}
+.eq-block{
+  background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r8);
+  padding:16px 20px;margin:14px 0;font-family:var(--mono);font-size:13px;
+  color:var(--c);text-align:center;line-height:2;overflow-x:auto;
+}
+.eq-block .eq-label{font-size:9px;color:var(--tx3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;text-align:left;display:block}
+.eq-inline{font-family:var(--mono);color:var(--c);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:3px;border:1px solid var(--b1)}
+.eq-table{width:100%;margin:14px 0;border-collapse:collapse}
+.eq-table th{background:var(--bg3);padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--tx2);letter-spacing:1px;border-bottom:1px solid var(--b1);text-align:left}
+.eq-table td{padding:8px 12px;border-bottom:1px solid var(--b1);font-size:13px;vertical-align:top}
+.eq-table td:first-child{font-family:var(--mono);font-size:11px;color:var(--a)}
+.theory-section{margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--b1)}
+
+/* REFS */
+.ref-list{list-style:none;counter-reset:refs}
+.ref-item{
+  counter-increment:refs;display:flex;gap:14px;padding:14px 0;
+  border-bottom:1px solid var(--b1);
+}
+.ref-item::before{
+  content:counter(refs);font-family:var(--mono);font-size:11px;color:var(--c);
+  min-width:24px;padding-top:1px;
+}
+.ref-body{flex:1}
+.ref-authors{font-size:13px;font-weight:600;color:var(--txb)}
+.ref-title{font-size:13px;color:var(--tx);font-style:italic;margin:2px 0}
+.ref-journal{font-family:var(--mono);font-size:10px;color:var(--tx2);letter-spacing:.5px}
+
+/* UTILITY */
+.section-header{margin-bottom:24px}
+.section-header h2{font-family:var(--disp);font-size:26px;font-weight:700;color:var(--txb)}
+.section-header p{color:var(--tx2);font-size:14px;margin-top:6px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-family:var(--mono);font-size:9px;letter-spacing:1px;font-weight:700}
+.gap8{gap:8px;display:flex;flex-wrap:wrap;margin-top:8px}
+.mt8{margin-top:8px}
+.mt16{margin-top:16px}
+.mt24{margin-top:24px}
+.mb8{margin-bottom:8px}
+.flex{display:flex}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.text-muted{color:var(--tx2)}
+.text-mono{font-family:var(--mono)}
+.scroll-x{overflow-x:auto}
+
+/* ANIMATIONS (switch SVGs) */
+@keyframes mercury-drop{0%,100%{transform:translateY(-3px);opacity:.6}50%{transform:translateY(3px);opacity:1}}
+@keyframes electron-flow{0%{stroke-dashoffset:100}100%{stroke-dashoffset:0}}
+@keyframes gate-charge{0%{height:0}100%{height:60%}}
+@keyframes plasma-glow{0%,100%{opacity:.3;filter:blur(2px)}50%{opacity:1;filter:blur(0)}}
+@keyframes bounce-contact{0%{transform:translateY(0)}30%{transform:translateY(-8px)}55%{transform:translateY(-3px)}70%{transform:translateY(-6px)}85%{transform:translateY(-1px)}100%{transform:translateY(0)}}
+@keyframes current-spread{0%{r:2}100%{r:30}}
+@keyframes slide-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sweep{from{stroke-dashoffset:1000}to{stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">
+    ⚡ CTAS <span>v2.0</span>
+  </div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" data-tab="overview">Overview</button>
+    <button class="nav-tab" data-tab="simulator">Simulator</button>
+    <button class="nav-tab" data-tab="oscilloscope">Oscilloscope</button>
+    <button class="nav-tab" data-tab="switches">Switches</button>
+    <button class="nav-tab" data-tab="schematic">Schematic</button>
+    <button class="nav-tab" data-tab="matrix">Matrix</button>
+    <button class="nav-tab" data-tab="theory">Theory</button>
+    <button class="nav-tab" data-tab="references">References</button>
+  </div>
+  <div class="nav-right">
+    <div id="status-dot"></div>
+    <div id="nav-status">READY</div>
+  </div>
+</nav>
+
+<!-- OVERVIEW -->
+<section class="section active" id="s-overview">
+<div class="container">
+<div class="hero">
+  <div class="hero-tag">Capacitor Transient Analysis Suite</div>
+  <h1>High-Fidelity<br><span>RLC Discharge Simulator</span></h1>
+  <p>A rigorous scientific companion for comparative switching technology studies. Simulate transient responses, explore switch parasitics, and analyze measurement loading effects with real-time ODE solving.</p>
+  <div class="badge-row">
+    <span class="badge c">RK4 ODE Solver</span>
+    <span class="badge a">8 Switch Models</span>
+    <span class="badge g">Live Oscilloscope</span>
+    <span class="badge c">SVG Schematics</span>
+    <span class="badge a">Parasitic Modeling</span>
+    <span class="badge g">Probe Loading</span>
+    <span class="badge">ATE-Grade Analysis</span>
+    <span class="badge">Comparison Matrix</span>
+  </div>
+  <div style="display:flex;gap:12px;justify-content:center">
+    <button class="btn btn-c" onclick="switchTab('simulator')">Launch Simulator</button>
+    <button class="btn btn-outline" onclick="switchTab('switches')">Browse Switches</button>
+  </div>
+</div>
+<div class="feat-grid">
+  <div class="feat-card">
+    <h3><span class="feat-icon">🧮</span> Real-Time ODE Solver</h3>
+    <p>4th-order Runge-Kutta integration of the series RLC differential equation. Computes α, ω₀, ωd and automatically identifies damping regime.</p>
+  </div>
+  <div class="feat-card">
+    <h3><span class="feat-icon">📡</span> Phosphor Oscilloscope</h3>
+    <p>Dual-trace canvas oscilloscope with authentic phosphor persistence, adjustable sweep, trigger level, bandwidth filter, and CH1/CH2 gain controls.</p>
+  </div>
+  <div class="feat-card">
+    <h3><span class="feat-icon">⚙️</span> Switch Physics Modules</h3>
+    <p>Eight animated switch models—from mercury relays and GaN HEMTs to vacuum interrupters and triggered spark gaps—each with device-specific transient distortion.</p>
+  </div>
+  <div class="feat-card">
+    <h3><span class="feat-icon">🔬</span> Equivalent Circuits</h3>
+    <p>Interactive SVG schematic builder morphs to display parasitic models for each switch: Coss, Lcs, Miller capacitance, tail current, plasma impedance, and contact bounce.</p>
+  </div>
+  <div class="feat-card">
+    <h3><span class="feat-icon">📊</span> Comparison Matrix</h3>
+    <p>Sortable, filterable table comparing all eight technologies across rise time, jitter, parasitics, voltage/current ratings, and application feasibility.</p>
+  </div>
+  <div class="feat-card">
+    <h3><span class="feat-icon">📐</span> Theory & Derivations</h3>
+    <p>Full mathematical treatment of RLC damping regimes, probe loading, Kelvin sensing, impedance matching, and device-specific parasitic physics.</p>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- SIMULATOR -->
+<section class="section" id="s-simulator">
+<div class="container">
+<div class="section-header">
+  <h2>Transient ODE Simulator</h2>
+  <p>RK4 integration of the series-RLC discharge equation with switch-specific parasitic injection and probe loading effects.</p>
+</div>
+<div class="sim-layout">
+  <!-- CONTROLS -->
+  <div>
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>Circuit Parameters</div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Switch Type</div>
+        <select id="sim-switch" onchange="onParamChange()">
+          <option value="reed">Coaxial Reed Relay</option>
+          <option value="mercury">Mercury-Wetted Relay</option>
+          <option value="gan">GaN HEMT</option>
+          <option value="mosfet" selected>Si Power MOSFET</option>
+          <option value="igbt">IGBT Module</option>
+          <option value="scr">SCR</option>
+          <option value="tsg">Triggered Spark Gap</option>
+          <option value="vcb">Vacuum Interrupter (VCB)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">V₀ — Initial Voltage <span id="lbl-v0">100 V</span></div>
+        <input type="range" id="sl-v0" min="1" max="1000" value="100" step="1" oninput="syncSlider(this,'lbl-v0','V');onParamChange()">
+        <input class="ctrl-num" type="number" id="in-v0" value="100" min="1" max="1000" step="1" onchange="syncInput(this,'sl-v0','lbl-v0','V');onParamChange()">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">C_DUT — Capacitance <span id="lbl-c">100 nF</span></div>
+        <input type="range" id="sl-c" min="-12" max="-3" value="-8" step="0.1" oninput="syncSliderLog(this,'lbl-c','F');onParamChange()">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">L_total — Inductance <span id="lbl-l">10 nH</span></div>
+        <input type="range" id="sl-l" min="-10" max="-6" value="-8" step="0.1" oninput="syncSliderLog(this,'lbl-l','H');onParamChange()">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">R_total — Resistance <span id="lbl-r">1 Ω</span></div>
+        <input type="range" id="sl-r" min="-2" max="2" value="0" step="0.05" oninput="syncSliderLog(this,'lbl-r','Ω');onParamChange()">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Probe Loading</div>
+        <select id="sim-probe" onchange="onParamChange()">
+          <option value="none">None (ideal)</option>
+          <option value="passive10x">10× Passive (10MΩ / 13pF)</option>
+          <option value="active">Active FET Probe (1MΩ / 1.5pF)</option>
+          <option value="resistive">Resistive Divider (500Ω)</option>
+        </select>
+      </div>
+      <button class="btn btn-c" style="width:100%;margin-top:8px" onclick="runSimulation()">▶ Run Simulation</button>
+      <button class="btn btn-outline" style="width:100%;margin-top:6px" onclick="resetParams()">↺ Reset Defaults</button>
+    </div>
+    <div class="panel mt16" style="font-size:12px">
+      <div class="panel-title"><div class="dot" style="background:var(--a)"></div>Switch Parasitics Added</div>
+      <div id="parasitic-info" style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--tx2)">Select switch above</div>
+    </div>
+  </div>
+  <!-- PLOT -->
+  <div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="panel-title" style="margin:0;border:none;padding:0"><div class="dot"></div>Discharge Waveform</div>
+        <div style="display:flex;gap:8px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--a)">━ V(t)</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--c)">━ I(t)</span>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="sim-canvas" width="800" height="340"></canvas>
+      </div>
+      <div id="regime-badge" class="damping-badge mt8" style="display:none"></div>
+    </div>
+  </div>
+  <!-- RESULTS -->
+  <div class="sim-results">
+    <div class="panel">
+      <div class="panel-title"><div class="dot" style="background:var(--g)"></div>Computed Values</div>
+      <div class="param-card"><div class="param-name">DAMPING COEFF α</div><div class="param-val a" id="res-alpha">—</div></div>
+      <div class="param-card"><div class="param-name">NATURAL FREQ ω₀</div><div class="param-val" id="res-w0">—</div></div>
+      <div class="param-card"><div class="param-name">DAMPED FREQ ωd</div><div class="param-val" id="res-wd">—</div></div>
+      <div class="param-card"><div class="param-name">PEAK CURRENT</div><div class="param-val g" id="res-ipeak">—</div></div>
+      <div class="param-card"><div class="param-name">PEAK dI/dt</div><div class="param-val" id="res-didt">—</div></div>
+      <div class="param-card"><div class="param-name">TIME CONSTANT τ</div><div class="param-val a" id="res-tau">—</div></div>
+      <div class="param-card"><div class="param-name">RESONANT FREQ f₀</div><div class="param-val" id="res-f0">—</div></div>
+      <div class="param-card"><div class="param-name">QUALITY FACTOR Q</div><div class="param-val g" id="res-q">—</div></div>
+      <div class="param-card"><div class="param-name">PEAK POWER</div><div class="param-val r" id="res-pwr">—</div></div>
+      <div class="param-card"><div class="param-name">CREST FACTOR</div><div class="param-val" id="res-cf">—</div></div>
+      <div class="mt16">
+        <button class="btn btn-outline btn-sm" style="width:100%" onclick="switchTab('oscilloscope')">View on Scope →</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- OSCILLOSCOPE -->
+<section class="section" id="s-oscilloscope">
+<div class="container">
+<div class="section-header mb8">
+  <h2>Phosphor Oscilloscope</h2>
+  <p>Dual-trace simulation with authentic persistence, switch-induced distortion, and probe loading artifacts.</p>
+</div>
+<div class="scope-outer">
+  <div class="scope-screen">
+    <canvas id="scope-canvas" width="900" height="380"></canvas>
+  </div>
+  <div class="scope-controls">
+    <div class="scope-knob">
+      <label>Timebase</label>
+      <select id="sc-tb" onchange="scopeRedraw()">
+        <option value="1e-9">1ns/div</option>
+        <option value="2e-9">2ns/div</option>
+        <option value="5e-9">5ns/div</option>
+        <option value="10e-9">10ns/div</option>
+        <option value="20e-9">20ns/div</option>
+        <option value="50e-9">50ns/div</option>
+        <option value="100e-9" selected>100ns/div</option>
+        <option value="200e-9">200ns/div</option>
+        <option value="500e-9">500ns/div</option>
+        <option value="1e-6">1µs/div</option>
+        <option value="2e-6">2µs/div</option>
+        <option value="5e-6">5µs/div</option>
+        <option value="10e-6">10µs/div</option>
+        <option value="100e-6">100µs/div</option>
+        <option value="1e-3">1ms/div</option>
+        <option value="5e-3">5ms/div</option>
+      </select>
+    </div>
+    <div class="scope-knob">
+      <label>CH1 (V) Scale</label>
+      <select id="sc-ch1" onchange="scopeRedraw()">
+        <option value="0.05">50mV/div</option>
+        <option value="0.1">100mV/div</option>
+        <option value="0.5">500mV/div</option>
+        <option value="1">1V/div</option>
+        <option value="2">2V/div</option>
+        <option value="5">5V/div</option>
+        <option value="10">10V/div</option>
+        <option value="20" selected>20V/div</option>
+        <option value="50">50V/div</option>
+        <option value="100">100V/div</option>
+        <option value="200">200V/div</option>
+        <option value="500">500V/div</option>
+      </select>
+    </div>
+    <div class="scope-knob">
+      <label>CH2 (I) Scale</label>
+      <select id="sc-ch2" onchange="scopeRedraw()">
+        <option value="0.01">10mA/div</option>
+        <option value="0.05">50mA/div</option>
+        <option value="0.1">100mA/div</option>
+        <option value="0.5">500mA/div</option>
+        <option value="1">1A/div</option>
+        <option value="2" selected>2A/div</option>
+        <option value="5">5A/div</option>
+        <option value="10">10A/div</option>
+        <option value="50">50A/div</option>
+        <option value="100">100A/div</option>
+      </select>
+    </div>
+    <div class="scope-knob">
+      <label>Bandwidth</label>
+      <select id="sc-bw" onchange="runSimulation();scopeRedraw()">
+        <option value="0">Full (unrestricted)</option>
+        <option value="20e6">20 MHz</option>
+        <option value="200e6">200 MHz</option>
+        <option value="1e9">1 GHz</option>
+      </select>
+    </div>
+    <div class="scope-knob">
+      <label>Trigger Level</label>
+      <input type="range" id="sc-trig" min="-100" max="100" value="10" style="margin-top:4px" oninput="scopeRedraw()">
+    </div>
+    <div>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button class="scope-btn active" id="btn-run" onclick="toggleScope()">RUN</button>
+        <button class="scope-btn" onclick="scopeCapture()">SAVE</button>
+      </div>
+      <div class="scope-readout" id="scope-readout">
+        CH1: — V<br>CH2: — A<br>Δt: —
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mt16" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+  <div class="panel">
+    <div class="panel-title" style="font-size:11px;margin-bottom:8px"><div class="dot"></div>CH1 Measurements</div>
+    <div id="scope-meas-v" style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--a)">—</div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" style="font-size:11px;margin-bottom:8px"><div class="dot" style="background:var(--c)"></div>CH2 Measurements</div>
+    <div id="scope-meas-i" style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--c)">—</div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" style="font-size:11px;margin-bottom:8px"><div class="dot" style="background:var(--g)"></div>Distortion Info</div>
+    <div id="scope-distortion" style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--g)">Select switch in Simulator tab</div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- SWITCHES -->
+<section class="section" id="s-switches">
+<div class="container">
+<div class="section-header">
+  <h2>Switch Physics Modules</h2>
+  <p>Eight switching technologies with device-specific parasitic models and animated physics visualizations. Click any card to load into simulator.</p>
+</div>
+<div class="switch-grid" id="switch-grid"></div>
+</div>
+</section>
+
+<!-- SCHEMATIC -->
+<section class="section" id="s-schematic">
+<div class="container">
+<div class="section-header">
+  <h2>Equivalent Circuit Builder</h2>
+  <p>Interactive SVG schematic with animated current flow. Switch between device models to see parasitic component changes.</p>
+</div>
+<div class="schematic-layout">
+  <div>
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>Select Switch</div>
+      <div id="schema-btns" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div class="panel mt16">
+      <div class="panel-title" style="font-size:11px"><div class="dot" style="background:var(--a)"></div>Parasitic Values</div>
+      <div id="schema-vals" style="font-family:var(--mono);font-size:10px;line-height:2.2;color:var(--tx2)">—</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div id="schematic-container" style="background:var(--bg);border-radius:var(--r8);overflow:hidden;border:1px solid var(--b1)">
+      <svg id="schematic-svg" viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--tx2)">
+      <span style="color:var(--a)">━━</span> Forward path
+      <span style="color:var(--c)">━━</span> Return path
+      <span style="color:var(--r)">●</span> Parasitics
+      <span style="color:var(--g)">→</span> Current flow
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- MATRIX -->
+<section class="section" id="s-matrix">
+<div class="container">
+<div class="section-header">
+  <h2>Comprehensive Comparison Matrix</h2>
+  <p>Click column headers to sort. Filter by application category. ★ = recommended.</p>
+</div>
+<div class="matrix-controls">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--tx3);margin-right:4px">FILTER:</span>
+  <button class="filter-btn active" onclick="filterMatrix('all',this)">All</button>
+  <button class="filter-btn" onclick="filterMatrix('em',this)">Electromechanical</button>
+  <button class="filter-btn" onclick="filterMatrix('ss',this)">Solid-State</button>
+  <button class="filter-btn" onclick="filterMatrix('fast',this)">Ultra-Fast (&lt;5ns)</button>
+  <button class="filter-btn" onclick="filterMatrix('hv',this)">High Voltage (&gt;1kV)</button>
+  <button class="filter-btn" onclick="filterMatrix('rec',this)">Recommended</button>
+</div>
+<div class="scroll-x">
+  <table id="compare-table">
+    <thead>
+      <tr>
+        <th onclick="sortMatrix(0)">Switch</th>
+        <th onclick="sortMatrix(1)">Rise Time</th>
+        <th onclick="sortMatrix(2)">Jitter / Bounce</th>
+        <th onclick="sortMatrix(3)">L_parasitic</th>
+        <th onclick="sortMatrix(4)">C_parasitic</th>
+        <th onclick="sortMatrix(5)">Max V</th>
+        <th onclick="sortMatrix(6)">Max I (pulsed)</th>
+        <th onclick="sortMatrix(7)">Distortion</th>
+        <th onclick="sortMatrix(8)">Feasibility</th>
+      </tr>
+    </thead>
+    <tbody id="matrix-tbody"></tbody>
+  </table>
+</div>
+</div>
+</section>
+
+<!-- THEORY -->
+<section class="section" id="s-theory">
+<div class="container">
+<div class="theory-layout">
+  <div>
+    <div class="theory-nav" id="theory-nav">
+      <a href="#th-rlc" class="active">RLC Discharge Model</a>
+      <a href="#th-damp">Damping Regimes</a>
+      <a href="#th-sw">Switch Parasitics</a>
+      <a href="#th-kelvin">Kelvin Sensing</a>
+      <a href="#th-probe">Probe Loading</a>
+      <a href="#th-match">Impedance Matching</a>
+      <a href="#th-gan">GaN Lcs Feedback</a>
+      <a href="#th-igbt">IGBT Tail Current</a>
+    </div>
+  </div>
+  <div class="theory-content">
+
+    <div class="theory-section" id="th-rlc">
+      <h2>RLC Discharge Model</h2>
+      <p>The discharge loop is modeled as a source-free lumped-element series RLC network. After switch closure, the governing second-order ODE is:</p>
+      <div class="eq-block">
+        <span class="eq-label">Series RLC Discharge ODE</span>
+        L<sub>total</sub> · d²i/dt² + R<sub>total</sub> · di/dt + (1/C<sub>DUT</sub>) · i(t) = 0
+      </div>
+      <p>where the total parasitic sums include device-specific contributions:</p>
+      <div class="eq-block">
+        L<sub>total</sub> = L<sub>ESL</sub> + L<sub>switch</sub> + L<sub>trace</sub><br>
+        R<sub>total</sub> = R<sub>ESR</sub> + R<sub>switch</sub> + R<sub>load</sub>
+      </div>
+      <p>This is solved by the simulator using 4th-order Runge-Kutta integration of the equivalent state-space form:</p>
+      <div class="eq-block">
+        dV<sub>C</sub>/dt = −i / C<sub>DUT</sub><br>
+        dI<sub>L</sub>/dt = (V<sub>C</sub> − R·I<sub>L</sub>) / L
+      </div>
+      <p>Initial conditions: V<sub>C</sub>(0) = V₀, I<sub>L</sub>(0) = 0. The stored energy in the capacitor at t=0 is ½C·V₀², which discharges through the resistive and inductive elements.</p>
+    </div>
+
+    <div class="theory-section" id="th-damp">
+      <h2>Damping Regimes</h2>
+      <p>The characteristic equation roots determine the circuit's transient response. Define:</p>
+      <div class="eq-block">
+        α = R<sub>total</sub> / (2L<sub>total</sub>) &nbsp;[Np/s, damping coefficient]<br>
+        ω₀ = 1 / √(L<sub>total</sub> · C<sub>DUT</sub>) &nbsp;[rad/s, natural frequency]
+      </div>
+      <table class="eq-table">
+        <thead><tr><th>Regime</th><th>Condition</th><th>Current Response i(t)</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Overdamped</td>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--tx)">α &gt; ω₀</td>
+            <td style="font-size:12px;color:var(--tx)">i(t) = V₀/(2β·L) · [e<sup>−(α−β)t</sup> − e<sup>−(α+β)t</sup>]<br><small style="color:var(--tx2)">β = √(α²−ω₀²)</small></td>
+          </tr>
+          <tr>
+            <td>Underdamped</td>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--tx)">α &lt; ω₀</td>
+            <td style="font-size:12px;color:var(--tx)">i(t) = V₀/(ωd·L) · e<sup>−αt</sup> · sin(ωd·t)<br><small style="color:var(--tx2)">ωd = √(ω₀²−α²)</small></td>
+          </tr>
+          <tr>
+            <td>Critically-Damped</td>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--tx)">α = ω₀</td>
+            <td style="font-size:12px;color:var(--tx)">i(t) = (V₀/L) · t · e<sup>−αt</sup></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>The quality factor Q = ω₀/(2α) = (1/R)·√(L/C) quantifies oscillatory behavior. For Q &gt; 0.5 (underdamped), ringing occurs. Precision capacitor testing typically targets overdamped or critically damped conditions to produce clean exponential waveforms for ESR/ESL extraction.</p>
+    </div>
+
+    <div class="theory-section" id="th-sw">
+      <h2>Switch Parasitic Physics</h2>
+      <h3>MOSFET Output Capacitance (C<sub>oss</sub>)</h3>
+      <p>MOSFET output capacitance C<sub>oss</sub> = C<sub>ds</sub> + C<sub>gd</sub> stores energy during the charge phase. At switch closure this energy:</p>
+      <div class="eq-block">E<sub>parasitic</sub> = ½ · C<sub>oss</sub> · V²</div>
+      <p>injects into the load, distorting waveforms when C<sub>DUT</sub> &lt; 1nF (comparable parasitic energy). The Miller plateau extends turn-on transition:</p>
+      <div class="eq-block">t<sub>plateau</sub> = Q<sub>gd</sub> / I<sub>gate_driver</sub></div>
+      <h3>GaN Common-Source Inductance Feedback</h3>
+      <p>Any inductance L<sub>cs</sub> shared between the power loop and gate loop generates negative feedback voltage during switching:</p>
+      <div class="eq-block">V<sub>feedback</sub> = −L<sub>cs</sub> · dI<sub>D</sub>/dt</div>
+      <p>With dI/dt &gt; 100A/ns, even 0.5nH causes catastrophic gate interference. Kelvin source packaging (4-terminal TO-247-4L) isolates the gate return from the power path.</p>
+      <h3>SCR Current Spreading</h3>
+      <p>In a thyristor, conduction initiates adjacent to the gate electrode and spreads laterally at a finite velocity (~50–100µm/µs). The local current density before spreading:</p>
+      <div class="eq-block">J<sub>local</sub> = I<sub>total</sub> / A<sub>conducting</sub>(t)</div>
+      <p>exceeds the safe operating area for 1–5µs if dI/dt is unconstrained, causing localized thermal runaway. This spreading delay is the primary waveform distortion mechanism in SCR circuits.</p>
+    </div>
+
+    <div class="theory-section" id="th-kelvin">
+      <h2>Kelvin Sensing & 4-Terminal Packages</h2>
+      <p>In a standard 3-terminal package, the high-current discharge path and gate-drive return share the common-source pin inductance L<sub>cs</sub>. The gate-source voltage "seen" by the device is corrupted:</p>
+      <div class="eq-block">V<sub>GS_effective</sub> = V<sub>GS_applied</sub> − L<sub>cs</sub> · dI<sub>D</sub>/dt</div>
+      <p>4-terminal Kelvin packages (TO-247-4L, TOLL, DFN8×8) provide a dedicated Kelvin source pin bonded directly to the die without passing through the high-current bond wire stack. This completely decouples the gate-drive loop from the power loop, restoring the device's full physical switching speed.</p>
+      <p>Kelvin connection advantage in rise time:</p>
+      <div class="eq-block">Δt<sub>rise</sub> ≈ L<sub>cs</sub> · I<sub>peak</sub> / V<sub>gate_drive</sub></div>
+      <p>For L<sub>cs</sub>=2nH, I<sub>peak</sub>=50A, V<sub>GS</sub>=15V: Δt<sub>rise</sub> ≈ 6.7ns additional delay — fully eliminated with Kelvin packaging.</p>
+    </div>
+
+    <div class="theory-section" id="th-probe">
+      <h2>High-Frequency Probe Loading</h2>
+      <p>A standard 10× passive probe presents R<sub>probe</sub>=10MΩ, C<sub>probe</sub>=10–15pF. At high frequencies, the capacitive reactance drops:</p>
+      <div class="eq-block">X<sub>C</sub> = 1 / (2π·f·C<sub>probe</sub>)</div>
+      <p>At 500MHz with C=10pF: X<sub>C</sub>=31.8Ω — severely loading high-impedance nodes, dampening HF components and distorting transition edges. The ground lead inductance (~1nH/mm) creates a resonant circuit:</p>
+      <div class="eq-block">f<sub>resonance</sub> = 1 / (2π·√(L<sub>ground</sub>·C<sub>probe</sub>))</div>
+      <p>For a 165mm (6.5in) ground clip: L<sub>ground</sub>≈190nH, f<sub>res</sub>≈100MHz — causing ringing artifacts on any edge with sub-10ns rise time. Solutions:</p>
+      <table class="eq-table">
+        <thead><tr><th>Approach</th><th>Input C</th><th>Bandwidth</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Active FET probe</td><td style="color:var(--g);">&lt;2pF</td><td>Multi-GHz</td><td style="color:var(--tx)">Tip-mounted buffer; best for HF</td></tr>
+          <tr><td>Coaxial ground spring</td><td style="color:var(--g);">Eliminates L<sub>gnd</sub></td><td>Full BW</td><td style="color:var(--tx)">Eliminates resonance artifact</td></tr>
+          <tr><td>Resistive divider</td><td style="color:var(--a);">&lt;0.5pF</td><td>Multi-GHz</td><td style="color:var(--tx)">450Ω + 50Ω coax; wideband stable</td></tr>
+          <tr><td>10× passive</td><td style="color:var(--r);">10–15pF</td><td>&lt;200MHz</td><td style="color:var(--tx)">Adequate for µs-range only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="theory-section" id="th-match">
+      <h2>Coaxial Impedance Matching</h2>
+      <p>For sub-nanosecond rise times, interconnects become distributed transmission lines. Any impedance discontinuity causes reflections characterized by:</p>
+      <div class="eq-block">Γ = (Z<sub>L</sub> − Z₀) / (Z<sub>L</sub> + Z₀) &nbsp;[Reflection coefficient]<br>
+      VSWR = (1 + |Γ|) / (1 − |Γ|)</div>
+      <p>For zero reflections: Γ=0, VSWR=1, requiring matched Z₀=50Ω throughout the signal path. A single impedance mismatch generates a reflected pulse with delay Δt = 2·L<sub>cable</sub>/v<sub>p</sub>, where v<sub>p</sub>≈2×10⁸ m/s in coaxial cable.</p>
+      <p>For high-voltage pulsed loads, standard thin-film resistors introduce parasitic series inductance (~1nH) and fail thermally. Optimal termination uses exponentially tapered coaxial terminations with CuSO₄ liquid or tubular bulk-ceramic resistive elements, maintaining Z=50Ω continuously along the physical taper length.</p>
+    </div>
+
+    <div class="theory-section" id="th-gan">
+      <h2>GaN HEMT: 2DEG Channel Physics</h2>
+      <p>GaN HEMTs use a two-dimensional electron gas (2DEG) formed at the AlGaN/GaN heterojunction. Unlike silicon MOSFETs, there is no body diode and no minority carrier storage. Gate charge is ~50× lower than silicon, enabling sub-nanosecond transitions. The 2DEG electron density:</p>
+      <div class="eq-block">n<sub>s</sub> = (ε<sub>AlGaN</sub>/q·d<sub>AlGaN</sub>) · (V<sub>th</sub> − V<sub>GS</sub>)</div>
+      <p>The common-source inductance feedback (V<sub>feedback</sub>=−L<sub>cs</sub>·dI/dt) is particularly destructive in GaN due to the extremely fast dI/dt (&gt;100A/ns achievable). With L<sub>cs</sub>=0.5nH and dI/dt=50A/ns: V<sub>feedback</sub>=−25V — exceeding V<sub>GS_max</sub> and causing gate oxide rupture. This is why Kelvin packaging is mandatory, not optional, for GaN HEMTs.</p>
+    </div>
+
+    <div class="theory-section" id="th-igbt">
+      <h2>IGBT: Minority Carrier Tail Current</h2>
+      <p>The IGBT's p-n-p bipolar drift region injects minority carriers (holes) during conduction. On turn-off, the MOS gate stops electron injection, but holes already stored in the drift region recombine at a rate governed by the minority carrier lifetime τ<sub>hl</sub>:</p>
+      <div class="eq-block">I<sub>tail</sub>(t) = I<sub>tail0</sub> · e<sup>−t/τ<sub>hl</sub></sup></div>
+      <p>This tail current (typically 10–30% of I<sub>C</sub>, lasting 1–5µs) causes substantial conduction loss during turn-off and distorts the discharge waveform tail. Modern devices use proton irradiation or electron irradiation to reduce τ<sub>hl</sub>, trading off forward voltage drop V<sub>CE(sat)</sub> against switching speed.</p>
+      <p>Inductive voltage overshoot during hard turn-off:</p>
+      <div class="eq-block">V<sub>overshoot</sub> = L<sub>stray</sub> · dI<sub>C</sub>/dt</div>
+      <p>For L<sub>stray</sub>=20nH, dI<sub>C</sub>/dt=1A/µs: V<sub>overshoot</sub>=20V above bus — requiring soft-shutdown (controlled gate ramp) to limit dI/dt and prevent IGBT overstress.</p>
+    </div>
+
+  </div>
+</div>
+</div>
+</section>
+
+<!-- REFERENCES -->
+<section class="section" id="s-references">
+<div class="container">
+<div class="section-header">
+  <h2>Academic References</h2>
+  <p>Foundational literature on switching technologies, transient analysis, and high-speed measurement techniques.</p>
+</div>
+<ol class="ref-list">
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Mohan, N., Undeland, T. M., Robbins, W. P.</div>
+      <div class="ref-title">Power Electronics: Converters, Applications, and Design (3rd ed.)</div>
+      <div class="ref-journal">Wiley, 2002 · ISBN 0-471-22693-9</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Baliga, B. J.</div>
+      <div class="ref-title">Fundamentals of Power Semiconductor Devices</div>
+      <div class="ref-journal">Springer Science & Business Media, 2008 · DOI: 10.1007/978-0-387-47314-7</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Lidow, A., de Rooij, M., Strydom, J., Reusch, D., Glaser, J.</div>
+      <div class="ref-title">GaN Transistors for Efficient Power Conversion (3rd ed.)</div>
+      <div class="ref-journal">Wiley, 2020 · ISBN 978-1-119-59414-7</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Johnson, H. W., Graham, M.</div>
+      <div class="ref-title">High-Speed Signal Propagation: Advanced Black Magic</div>
+      <div class="ref-journal">Prentice Hall, 2003 · ISBN 0-13-084408-X</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Tektronix Inc.</div>
+      <div class="ref-title">Probe Fundamentals: A Comprehensive Probing Guide for Oscilloscopes</div>
+      <div class="ref-journal">Tektronix Application Note 3GW-60440-0, 2019</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Rashid, M. H. (Ed.)</div>
+      <div class="ref-title">Power Electronics Handbook: Devices, Circuits and Applications (4th ed.)</div>
+      <div class="ref-journal">Butterworth-Heinemann, 2017 · ISBN 978-0-12-811407-0</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Lafferty, J. M. (Ed.)</div>
+      <div class="ref-title">Vacuum Arcs: Theory and Application</div>
+      <div class="ref-journal">Wiley-Interscience, 1980 · IEEE Press Reprint Series</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Mesyats, G. A., Proskurovsky, D. I.</div>
+      <div class="ref-title">Pulsed Electrical Discharge in Vacuum</div>
+      <div class="ref-journal">Springer-Verlag Berlin Heidelberg, 1989 · DOI: 10.1007/978-3-642-83698-5</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Standex Electronics</div>
+      <div class="ref-title">CRF Series Coaxial Reed Relay: Datasheet and Application Notes</div>
+      <div class="ref-journal">Standex Electronics Technical Publications, rev. 2022</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">GaN Systems Inc.</div>
+      <div class="ref-title">GS66508B / GS66516B GaN E-HEMT Datasheet, App Note GN005: Layout Guidelines for GaN Power Devices</div>
+      <div class="ref-journal">GaN Systems Technical Documentation, 2021</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Pozar, D. M.</div>
+      <div class="ref-title">Microwave Engineering (4th ed.) — Transmission Lines and Network Analysis</div>
+      <div class="ref-journal">Wiley, 2011 · ISBN 978-0-470-63155-3</div>
+    </div>
+  </li>
+  <li class="ref-item">
+    <div class="ref-body">
+      <div class="ref-authors">Williams, J.</div>
+      <div class="ref-title">High Speed Amplifier Techniques: A Designer's Companion for Wideband Circuitry</div>
+      <div class="ref-journal">Linear Technology Application Note AN-47, 1991</div>
+    </div>
+  </li>
+</ol>
+</div>
+</section>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const SW = {
+  reed:{
+    name:'Coaxial Reed Relay',shortName:'Reed Relay',category:'Electromechanical',
+    color:'#00ff80',catClass:'g',
+    specs:{rise:'30–50 ps',jitter:'<1 ps',Lp:'<0.5 nH',Cp:'<0.2 pF',maxV:'10 kV',maxI:'10 A',Ron:'<100 mΩ'},
+    params:{L_sw:0.3e-9,C_sw:0.15e-12,R_sw:0.08,type:'reed'},
+    distortion:'reed',rating:5,
+    strengths:['30ps rise time','DC–17GHz BW','<0.2pF off-state','Cold-switch ideal'],
+    weaknesses:['Cold-switch ONLY','Limited current','Mechanical lifetime'],
+    feasibility:'High — ATE Standard',rec:true,
+    matrix:{rise:30e-12,jitter:1e-12,Lp:0.5e-9,Cp:0.2e-12,maxV:10e3,maxI:10,dist:'Extremely Low',cat:'em',hv:true}
+  },
+  mercury:{
+    name:'Mercury-Wetted Relay',shortName:'Mercury',category:'Electromechanical',
+    color:'#00d4ff',catClass:'c',
+    specs:{rise:'250ps–5ns',jitter:'<10 ps',Lp:'2–5 nH',Cp:'1–2 pF',maxV:'1 kV',maxI:'5 A',Ron:'<50 mΩ'},
+    params:{L_sw:3e-9,C_sw:1.5e-12,R_sw:0.05,type:'mercury'},
+    distortion:'mercury',rating:4,
+    strengths:['Zero contact bounce','Sub-ns rise','<50mΩ contact R','Billions of cycles'],
+    weaknesses:['Orientation sensitive','Max 120Hz switching','RoHS restricted','Obsolete'],
+    feasibility:'Obsolete — Heritage Only',rec:false,
+    matrix:{rise:250e-12,jitter:10e-12,Lp:3e-9,Cp:1.5e-12,maxV:1e3,maxI:5,dist:'Minimal',cat:'em',hv:false}
+  },
+  gan:{
+    name:'GaN HEMT',shortName:'GaN',category:'Wide-Bandgap',
+    color:'#a855f7',catClass:'p',
+    specs:{rise:'400ps–3.8ns',jitter:'<10 ps',Lp:'<1 nH (Kelvin)',Cp:'5–20 pF (Coss)',maxV:'650 V',maxI:'100 A',Ron:'<10 mΩ'},
+    params:{L_sw:0.5e-9,C_sw:12e-12,R_sw:0.008,type:'gan',Lcs:0.5e-9},
+    distortion:'gan',rating:5,
+    strengths:['Sub-ns switching','Ultra-low Coss','No minority carriers','Kelvin packaging'],
+    weaknesses:['Lcs feedback critical','Higher cost vs Si','VDS max 650V'],
+    feasibility:'High — Ultra-Fast Testing',rec:true,
+    matrix:{rise:400e-12,jitter:10e-12,Lp:0.5e-9,Cp:12e-12,maxV:650,maxI:100,dist:'Extremely Low',cat:'ss',hv:false}
+  },
+  mosfet:{
+    name:'Si Power MOSFET',shortName:'Si MOSFET',category:'Solid-State',
+    color:'#ffaa00',catClass:'a',
+    specs:{rise:'10–50 ns',jitter:'<50 ps',Lp:'5–15 nH',Cp:'100–500 pF (Coss)',maxV:'1.2 kV',maxI:'100 A',Ron:'10–100 mΩ'},
+    params:{L_sw:10e-9,C_sw:300e-12,R_sw:0.05,type:'mosfet',Qgd:30e-9},
+    distortion:'mosfet',rating:4,
+    strengths:['Cost-effective','No mechanical wear','High power capability','Widely available'],
+    weaknesses:['Miller plateau slows switching','Large Coss (~300pF)','Parasitic energy injection'],
+    feasibility:'High — Lab Benchmark',rec:true,
+    matrix:{rise:10e-9,jitter:50e-12,Lp:10e-9,Cp:300e-12,maxV:1200,maxI:100,dist:'Low–Moderate',cat:'ss',hv:true}
+  },
+  igbt:{
+    name:'IGBT Module',shortName:'IGBT',category:'Solid-State',
+    color:'#ff6633',catClass:'o',
+    specs:{rise:'100–800 ns',jitter:'<100 ps',Lp:'10–30 nH',Cp:'1–5 nF (Cies)',maxV:'6.5 kV',maxI:'1.5 kA',Ron:'1.5–2.5V sat'},
+    params:{L_sw:20e-9,C_sw:3e-9,R_sw:0.1,type:'igbt',tailTime:2e-6},
+    distortion:'igbt',rating:3,
+    strengths:['6.5kV / 1.5kA rated','No mechanical wear','Utility power standard'],
+    weaknesses:['100–800ns turn-on','Tail current 1–5µs','Requires soft-shutdown'],
+    feasibility:'High — Medium-Voltage',rec:false,
+    matrix:{rise:100e-9,jitter:100e-12,Lp:20e-9,Cp:3e-9,maxV:6500,maxI:1500,dist:'Moderate–High',cat:'ss',hv:true}
+  },
+  scr:{
+    name:'SCR (Thyristor)',shortName:'SCR',category:'Solid-State',
+    color:'#ff3355',catClass:'r',
+    specs:{rise:'1–5 µs',jitter:'<500 ps',Lp:'15–40 nH',Cp:'2–10 nF',maxV:'12 kV',maxI:'1.5 kA',Ron:'VT=1–2V'},
+    params:{L_sw:25e-9,C_sw:6e-9,R_sw:0.2,type:'scr',spreadTime:2e-6},
+    distortion:'scr',rating:2,
+    strengths:['Highest pulsed power','12kV / 1.5kA','Self-latching after trigger'],
+    weaknesses:['1–5µs current spreading','No gate turn-off','Unsuitable for <µs testing'],
+    feasibility:'High — Pulsed Power Systems',rec:false,
+    matrix:{rise:1e-6,jitter:500e-12,Lp:25e-9,Cp:6e-9,maxV:12e3,maxI:1500,dist:'High',cat:'ss',hv:true}
+  },
+  tsg:{
+    name:'Triggered Spark Gap',shortName:'Spark Gap',category:'Gas-Discharge',
+    color:'#ffd700',catClass:'y',
+    specs:{rise:'<50 ns',jitter:'10–100 ns',Lp:'10–50 nH',Cp:'<1 pF',maxV:'32 kV',maxI:'>5 kA',Ron:'20–30V arc'},
+    params:{L_sw:30e-9,C_sw:0.5e-12,R_sw:0.3,type:'tsg',jitter:50e-9,noise:0.08},
+    distortion:'tsg',rating:2,
+    strengths:['32kV / >5kA','Sub-50ns conduction','Ultra-high off-state R (10¹²Ω)'],
+    weaknesses:['10–100ns jitter','Severe plasma RF noise','Very low repetition rate'],
+    feasibility:'Moderate — Extreme HV Only',rec:false,
+    matrix:{rise:50e-9,jitter:50e-9,Lp:30e-9,Cp:0.5e-12,maxV:32e3,maxI:5000,dist:'High (plasma noise)',cat:'gas',hv:true}
+  },
+  vcb:{
+    name:'Vacuum Interrupter',shortName:'VCB',category:'Electromechanical',
+    color:'#ff6688',catClass:'r',
+    specs:{rise:'40–80 ms closing',jitter:'Bounce 1–8 ms',Lp:'20–100 nH',Cp:'10–50 pF',maxV:'40.5 kV',maxI:'40 kA',Ron:'<20 µΩ'},
+    params:{L_sw:60e-9,C_sw:30e-12,R_sw:20e-6,type:'vcb',bounceTime:3e-3,numBounces:5},
+    distortion:'vcb',rating:1,
+    strengths:['40.5kV / 40kA capable','<20µΩ on-state R','Power grid proven'],
+    weaknesses:['1–8ms contact bounce','Prestrike arcing 1–3ms before','Completely unsuitable for precision'],
+    feasibility:'Grid Distribution ONLY — Avoid for testing',rec:false,
+    matrix:{rise:50e-3,jitter:3e-3,Lp:60e-9,Cp:30e-12,maxV:40500,maxI:40000,dist:'Severe',cat:'em',hv:true}
+  }
+};
+
+const SW_ORDER=['reed','mercury','gan','mosfet','igbt','scr','tsg','vcb'];
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let state={
+  sw:'mosfet',V0:100,C:100e-9,L:10e-9,R:1,
+  probe:'none',
+  simData:{t:[],v:[],i:[],vRaw:[],iRaw:[]},
+  scopeRunning:true,
+  sortCol:-1,sortDir:1,filter:'all'
+};
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+document.getElementById('nav-tabs').addEventListener('click',e=>{
+  const tab=e.target.dataset.tab;if(!tab)return;
+  switchTab(tab);
+});
+function switchTab(tab){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='s-'+tab));
+  if(tab==='oscilloscope')scopeRedraw();
+  if(tab==='schematic')drawSchematic(state.sw);
+  if(tab==='theory')initTheoryNav();
+}
+
+// ============================================================
+// PARAM HELPERS
+// ============================================================
+function fmtSI(v,unit){
+  const a=Math.abs(v);
+  if(a===0)return'0 '+unit;
+  if(a<1e-9)return(v*1e12).toFixed(2)+' p'+unit;
+  if(a<1e-6)return(v*1e9).toFixed(2)+' n'+unit;
+  if(a<1e-3)return(v*1e6).toFixed(2)+' µ'+unit;
+  if(a<1)return(v*1e3).toFixed(2)+' m'+unit;
+  if(a<1e3)return v.toFixed(3)+' '+unit;
+  if(a<1e6)return(v/1e3).toFixed(2)+' k'+unit;
+  return(v/1e6).toFixed(2)+' M'+unit;
+}
+function fmtFreq(f){
+  if(f<1e3)return f.toFixed(1)+' Hz';
+  if(f<1e6)return(f/1e3).toFixed(2)+' kHz';
+  if(f<1e9)return(f/1e6).toFixed(2)+' MHz';
+  return(f/1e9).toFixed(3)+' GHz';
+}
+function fmtTime(t){
+  if(t<1e-9)return(t*1e12).toFixed(1)+' ps';
+  if(t<1e-6)return(t*1e9).toFixed(1)+' ns';
+  if(t<1e-3)return(t*1e6).toFixed(2)+' µs';
+  if(t<1)return(t*1e3).toFixed(2)+' ms';
+  return t.toFixed(3)+' s';
+}
+function getParams(){
+  const sw=SW[state.sw].params;
+  return{
+    V0:state.V0,
+    C:state.C,
+    L:state.L+sw.L_sw,
+    R:state.R+sw.R_sw,
+    C_sw:sw.C_sw,
+    swType:sw.type
+  };
+}
+function syncSlider(el,lblId,unit){
+  const v=parseFloat(el.value);
+  document.getElementById(lblId).textContent=v+' '+unit;
+  el.style.setProperty('--val',((v-el.min)/(el.max-el.min)*100)+'%');
+  const map={sl_v0:'V0'};
+  if(el.id==='sl-v0'){state.V0=v;document.getElementById('in-v0').value=v}
+}
+function syncSliderLog(el,lblId,unit){
+  const v=Math.pow(10,parseFloat(el.value));
+  const id=el.id;
+  document.getElementById(lblId).textContent=fmtSI(v,unit);
+  if(id==='sl-c')state.C=v;
+  if(id==='sl-l')state.L=v;
+  if(id==='sl-r')state.R=v;
+}
+function syncInput(el,slId,lblId,unit){
+  const v=parseFloat(el.value)||0;
+  state.V0=v;
+  document.getElementById(slId).value=v;
+  document.getElementById(lblId).textContent=v+' '+unit;
+}
+function onParamChange(){
+  const sw=document.getElementById('sim-switch').value;
+  state.sw=sw;
+  state.probe=document.getElementById('sim-probe').value;
+  updateParasiticInfo();
+}
+function updateParasiticInfo(){
+  const p=SW[state.sw].params;
+  document.getElementById('parasitic-info').innerHTML=
+    `L_switch: ${fmtSI(p.L_sw,'H')}<br>`+
+    `C_switch: ${fmtSI(p.C_sw,'F')}<br>`+
+    `R_switch: ${fmtSI(p.R_sw,'Ω')}<br>`+
+    `Distortion: ${SW[state.sw].distortion}`;
+}
+function resetParams(){
+  state.V0=100;state.C=100e-9;state.L=10e-9;state.R=1;state.sw='mosfet';
+  document.getElementById('sl-v0').value=100;document.getElementById('in-v0').value=100;
+  document.getElementById('lbl-v0').textContent='100 V';
+  document.getElementById('sl-c').value=-8;document.getElementById('lbl-c').textContent='100 nF';
+  document.getElementById('sl-l').value=-8;document.getElementById('lbl-l').textContent='10 nH';
+  document.getElementById('sl-r').value=0;document.getElementById('lbl-r').textContent='1 Ω';
+  document.getElementById('sim-switch').value='mosfet';
+  updateParasiticInfo();runSimulation();
+}
+
+// ============================================================
+// ODE SOLVER (RK4)
+// ============================================================
+function rk4Step(t,y,h,R,L,C){
+  function deriv(y){return[-y[1]/C,(y[0]-R*y[1])/L]}
+  const k1=deriv(y);
+  const y2=[y[0]+h/2*k1[0],y[1]+h/2*k1[1]];
+  const k2=deriv(y2);
+  const y3=[y[0]+h/2*k2[0],y[1]+h/2*k2[1]];
+  const k3=deriv(y3);
+  const y4=[y[0]+h*k3[0],y[1]+h*k3[1]];
+  const k4=deriv(y4);
+  return[y[0]+h/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]),
+         y[1]+h/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1])];
+}
+
+function solve(V0,C,L,R,nSteps,tTotal){
+  const h=tTotal/nSteps;
+  let y=[V0,0];
+  const vArr=[V0],iArr=[0],tArr=[0];
+  for(let i=1;i<=nSteps;i++){
+    y=rk4Step(i*h,y,h,R,L,C);
+    vArr.push(y[0]);iArr.push(y[1]);tArr.push(i*h);
+  }
+  return{v:vArr,i:iArr,t:tArr};
+}
+
+// ============================================================
+// SWITCH DISTORTIONS
+// ============================================================
+function applyDistortion(t,v,i,swType,swParams,probe){
+  let vOut=[...v],iOut=[...i];
+  const N=t.length;
+
+  // Bandwidth filter (Gaussian)
+  const bwEl=document.getElementById('sc-bw');
+  const bw=bwEl?parseFloat(bwEl.value):0;
+  if(bw>0){
+    const dt=t[1]-t[0];
+    const sigma=1/(2*Math.PI*bw)*0.6/dt;
+    vOut=gaussianFilter(vOut,sigma);
+    iOut=gaussianFilter(iOut,sigma);
+  }
+
+  switch(swType){
+    case'mercury':{
+      // Very slight rise time smoothing only
+      vOut=gaussianFilter(vOut,1.5);iOut=gaussianFilter(iOut,1.5);
+      break;
+    }
+    case'mosfet':{
+      // Miller plateau: slow rise for first plateauSamples
+      const dt=t[1]-t[0];
+      const plateauSamples=Math.round(30e-9/dt);
+      for(let k=0;k<Math.min(plateauSamples,N);k++){
+        const factor=k/plateauSamples;
+        iOut[k]*=factor*factor;
+        vOut[k]=v[0]-factor*(v[0]-vOut[k]);
+      }
+      // Add Coss bump at t=0
+      const cossBump=swParams.C_sw||300e-12;
+      const vbump=state.V0*cossBump/(state.C+cossBump)*0.3;
+      for(let k=0;k<Math.min(5,N);k++)vOut[k]+=vbump*(1-k/5);
+      vOut=gaussianFilter(vOut,3);iOut=gaussianFilter(iOut,3);
+      break;
+    }
+    case'gan':{
+      // Lcs oscillation at high frequency
+      const dt=t[1]-t[0];
+      const Lcs=swParams.Lcs||0.5e-9;
+      const C_node=swParams.C_sw||12e-12;
+      const f_osc=1/(2*Math.PI*Math.sqrt(Lcs*C_node));
+      const omega=2*Math.PI*f_osc;
+      const tau_decay=3e-9/dt;
+      for(let k=0;k<N;k++){
+        const amp=0.05*Math.exp(-k/tau_decay);
+        const osc=amp*Math.sin(omega*t[k]);
+        iOut[k]*=(1+osc);
+        vOut[k]*=(1-osc*0.5);
+      }
+      vOut=gaussianFilter(vOut,0.8);iOut=gaussianFilter(iOut,0.8);
+      break;
+    }
+    case'igbt':{
+      // Slow sigmoid rise
+      const dt=t[1]-t[0];
+      const riseT=400e-9,riseSamples=Math.round(riseT/dt);
+      for(let k=0;k<Math.min(riseSamples*3,N);k++){
+        const s=1/(1+Math.exp(-6*(k/riseSamples-0.5)));
+        iOut[k]*=s;vOut[k]=v[0]-(v[0]-vOut[k])*s;
+      }
+      // Tail current on falling edge
+      const tailT=(swParams.tailTime||2e-6);
+      const tailSamples=Math.round(tailT/dt);
+      let peakIdx=0,peakI=0;
+      for(let k=0;k<N;k++){if(iOut[k]>peakI){peakI=iOut[k];peakIdx=k;}}
+      for(let k=peakIdx;k<N;k++){
+        const tail=0.15*peakI*Math.exp(-(k-peakIdx)/tailSamples);
+        iOut[k]+=tail;vOut[k]-=tail*state.R*0.1;
+      }
+      vOut=gaussianFilter(vOut,6);iOut=gaussianFilter(iOut,6);
+      break;
+    }
+    case'scr':{
+      // Current spreading delay: slow sigmoid with τ=2µs
+      const dt=t[1]-t[0];
+      const spreadT=swParams.spreadTime||2e-6;
+      const spreadS=Math.round(spreadT/dt);
+      for(let k=0;k<N;k++){
+        const s=1/(1+Math.exp(-5*(k/spreadS-0.5)));
+        iOut[k]*=s;vOut[k]=v[0]-(v[0]-vOut[k])*s;
+      }
+      vOut=gaussianFilter(vOut,8);iOut=gaussianFilter(iOut,8);
+      break;
+    }
+    case'tsg':{
+      // RF noise + jitter
+      const noiseAmp=swParams.noise||0.08;
+      const dt=t[1]-t[0];
+      const jitterS=Math.round((swParams.jitter||50e-9)/dt);
+      // Add stochastic jitter (shift signal)
+      const jShift=Math.floor(Math.random()*jitterS);
+      for(let k=N-1;k>=jShift;k--){vOut[k]=vOut[k-jShift];iOut[k]=iOut[k-jShift];}
+      for(let k=0;k<jShift;k++){vOut[k]=state.V0;iOut[k]=0;}
+      // Add plasma RF noise
+      for(let k=0;k<N;k++){
+        if(iOut[k]>0.01*Math.max(...iOut)){
+          const noise=(Math.random()-0.5)*noiseAmp;
+          iOut[k]*=(1+noise);vOut[k]*=(1-noise*0.3);
+        }
+      }
+      // Add some 50MHz oscillation burst at turn-on
+      const f_plasma=50e6;
+      const burstDur=Math.round(200e-9/dt);
+      for(let k=jShift;k<Math.min(jShift+burstDur,N);k++){
+        const env=Math.exp(-(k-jShift)/burstDur*3);
+        iOut[k]+=state.V0/10*env*Math.sin(2*Math.PI*f_plasma*t[k]);
+      }
+      break;
+    }
+    case'vcb':{
+      // Prestrike + multiple bounces
+      const dt=t[1]-t[0];
+      const bounceT=swParams.bounceTime||3e-3;
+      const numBounces=swParams.numBounces||5;
+      const bounceSamples=Math.round(bounceT/dt);
+      // Inject bounce artifacts
+      for(let b=0;b<Math.min(numBounces,Math.floor(N/bounceSamples));b++){
+        const start=Math.round(b*bounceSamples*0.6+10);
+        const amp=0.3*Math.pow(0.6,b);
+        const dur=Math.round(bounceSamples*0.15);
+        for(let k=start;k<Math.min(start+dur,N);k++){
+          const env=Math.exp(-(k-start)/dur*4)*Math.sin(2*Math.PI*(k-start)/dur*3);
+          iOut[k]+=iOut[k]*amp*env;
+          vOut[k]-=vOut[k]*amp*env*0.5;
+        }
+      }
+      // Add prestrike: initial spike before main waveform
+      const preStrike=Math.round(0.01*N);
+      for(let k=0;k<preStrike;k++){
+        const env=Math.exp(-k/(preStrike/3))*Math.sin(2*Math.PI*k/preStrike*2);
+        iOut[k]+=state.V0/state.R*0.2*Math.max(0,env);
+      }
+      break;
+    }
+    case'reed':default:break;
+  }
+
+  // Probe loading effect
+  if(probe==='passive10x'){
+    const Cp=13e-12,dt=t[1]-t[0];
+    const tau_probe=Cp*(state.R||1);
+    const alpha=dt/tau_probe;
+    for(let k=1;k<N;k++){
+      vOut[k]=vOut[k-1]+(vOut[k]-vOut[k-1])*Math.min(1,alpha*0.3);
+    }
+    vOut=gaussianFilter(vOut,2);
+  }else if(probe==='active'){
+    vOut=gaussianFilter(vOut,0.5);
+  }
+
+  return{v:vOut,i:iOut};
+}
+
+function gaussianFilter(arr,sigma){
+  if(sigma<0.5)return arr;
+  const out=new Array(arr.length);
+  const kernel=[];const r=Math.ceil(sigma*3);
+  let sum=0;
+  for(let k=-r;k<=r;k++){const g=Math.exp(-k*k/(2*sigma*sigma));kernel.push(g);sum+=g;}
+  for(let i=0;i<arr.length;i++){
+    let v=0;
+    for(let j=0;j<kernel.length;j++){
+      const idx=Math.max(0,Math.min(arr.length-1,i+j-r));
+      v+=arr[idx]*kernel[j];
+    }
+    out[i]=v/sum;
+  }
+  return out;
+}
+
+// ============================================================
+// SIMULATION RUNNER
+// ============================================================
+function runSimulation(){
+  const p=getParams();
+  const alpha=p.R/(2*p.L);
+  const w0=1/Math.sqrt(p.L*p.C);
+  const wd=Math.sqrt(Math.max(0,w0*w0-alpha*alpha));
+  const regime=alpha>w0?'OVERDAMPED':alpha<w0?'UNDERDAMPED':'CRITICALLY DAMPED';
+  const tau=1/alpha;
+  const f0=w0/(2*Math.PI);
+  const Q=w0/(2*alpha);
+
+  // Choose simulation window based on regime
+  let tTotal;
+  if(regime==='UNDERDAMPED')tTotal=Math.max(8*tau,10/f0);
+  else tTotal=Math.max(10*tau,1e-9);
+  tTotal=Math.min(tTotal,0.1);
+  const nSteps=2000;
+
+  const raw=solve(p.V0,p.C,p.L,p.R,nSteps,tTotal);
+  const dist=applyDistortion(raw.t,raw.v,raw.i,p.swType,SW[state.sw].params,state.probe);
+
+  state.simData={t:raw.t,v:dist.v,i:dist.i,vRaw:raw.v,iRaw:raw.i};
+
+  const iPeak=Math.max(...dist.i.map(Math.abs));
+  const iArr=dist.i;
+  let diMax=0;
+  for(let k=1;k<iArr.length;k++){
+    const dt=raw.t[k]-raw.t[k-1];
+    diMax=Math.max(diMax,Math.abs((iArr[k]-iArr[k-1])/dt));
+  }
+  const pPeak=iPeak*p.V0;
+
+  // Update results panel
+  const rEl=id=>document.getElementById(id);
+  if(rEl('res-alpha'))rEl('res-alpha').textContent=fmtSI(alpha,'Np/s');
+  if(rEl('res-w0'))rEl('res-w0').textContent=fmtFreq(w0/(2*Math.PI));
+  if(rEl('res-wd'))rEl('res-wd').textContent=wd>0?fmtFreq(wd/(2*Math.PI)):'0 (overdamped)';
+  if(rEl('res-ipeak'))rEl('res-ipeak').textContent=fmtSI(iPeak,'A');
+  if(rEl('res-didt'))rEl('res-didt').textContent=fmtSI(diMax,'A/s');
+  if(rEl('res-tau'))rEl('res-tau').textContent=fmtTime(tau);
+  if(rEl('res-f0'))rEl('res-f0').textContent=fmtFreq(f0);
+  if(rEl('res-q'))rEl('res-q').textContent=Q.toFixed(3);
+  if(rEl('res-pwr'))rEl('res-pwr').textContent=fmtSI(pPeak,'W');
+  if(rEl('res-cf'))rEl('res-cf').textContent=(iPeak/(p.V0/p.R)).toFixed(2);
+
+  // Regime badge
+  const rb=document.getElementById('regime-badge');
+  if(rb){
+    rb.style.display='block';
+    const colors={OVERDAMPED:{bg:'rgba(255,170,0,.12)',c:'#ffaa00'},
+                  UNDERDAMPED:{bg:'rgba(0,212,255,.12)',c:'#00d4ff'},
+                  'CRITICALLY DAMPED':{bg:'rgba(0,255,128,.12)',c:'#00ff80'}};
+    const col=colors[regime];
+    rb.style.background=col.bg;rb.style.color=col.c;
+    rb.style.borderColor=col.c.replace(')',', 0.4)').replace('rgb','rgba');
+    rb.textContent=`⚡ ${regime}   α=${fmtSI(alpha,'Np/s')}  ω₀=${fmtFreq(f0)}  Q=${Q.toFixed(2)}`;
+  }
+
+  drawSimPlot();
+  scopeRedraw();
+  updateScopeInfo();
+  document.getElementById('nav-status').textContent=regime;
+}
+
+// ============================================================
+// SIM PLOT
+// ============================================================
+function drawSimPlot(){
+  const canvas=document.getElementById('sim-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const PAD={l:60,r:16,t:16,b:44};
+  const pw=W-PAD.l-PAD.r,ph=H-PAD.t-PAD.b;
+
+  ctx.fillStyle='#070c12';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  const nx=10,ny=8;
+  ctx.lineWidth=1;
+  for(let gx=0;gx<=nx;gx++){
+    const x=PAD.l+gx/nx*pw;
+    ctx.strokeStyle=gx%5===0?'rgba(26,34,53,0.9)':'rgba(20,28,44,0.6)';
+    ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,PAD.t+ph);ctx.stroke();
+  }
+  for(let gy=0;gy<=ny;gy++){
+    const y=PAD.t+gy/ny*ph;
+    ctx.strokeStyle=gy%4===0?'rgba(26,34,53,0.9)':'rgba(20,28,44,0.6)';
+    ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(PAD.l+pw,y);ctx.stroke();
+  }
+
+  const {t,v,i}=state.simData;
+  if(!t||t.length<2){ctx.fillStyle='#3a4f66';ctx.font='14px Space Mono';ctx.fillText('No data — press Run Simulation',PAD.l+20,H/2);return;}
+
+  const tMin=t[0],tMax=t[t.length-1];
+  const vMax=Math.max(Math.max(...v.map(x=>Math.abs(x)||0)),0.01);
+  const iMax=Math.max(Math.max(...i.map(x=>Math.abs(x)||0)),0.001);
+  const toX=tt=>(PAD.l+(tt-tMin)/(tMax-tMin)*pw);
+  const toYv=vv=>(PAD.t+ph/2-(vv/vMax)*(ph/2)*0.9);
+  const toYi=ii=>(PAD.t+ph/2-(ii/iMax)*(ph/2)*0.9);
+
+  // V trace (amber)
+  ctx.beginPath();ctx.strokeStyle='#ffaa00';ctx.lineWidth=2;
+  ctx.shadowBlur=5;ctx.shadowColor='rgba(255,170,0,0.6)';
+  v.forEach((vv,k)=>{const x=toX(t[k]),y=toYv(vv);k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+
+  // I trace (cyan)
+  ctx.beginPath();ctx.strokeStyle='#00d4ff';ctx.lineWidth=2;
+  ctx.shadowColor='rgba(0,212,255,0.6)';
+  i.forEach((ii,k)=>{const x=toX(t[k]),y=toYi(ii);k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+  ctx.shadowBlur=0;
+
+  // Zero line
+  ctx.beginPath();ctx.strokeStyle='rgba(58,79,102,0.5)';ctx.lineWidth=1;
+  ctx.setLineDash([4,4]);ctx.moveTo(PAD.l,PAD.t+ph/2);ctx.lineTo(PAD.l+pw,PAD.t+ph/2);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axes labels
+  ctx.fillStyle='#3a4f66';ctx.font='10px Space Mono';ctx.textAlign='right';
+  ctx.fillStyle='#ffaa00';ctx.fillText(fmtSI(vMax,'V'),PAD.l-4,PAD.t+8);
+  ctx.fillText('0',PAD.l-4,PAD.t+ph/2+4);
+  ctx.fillText(fmtSI(-vMax,'V'),PAD.l-4,PAD.t+ph-4);
+  ctx.fillStyle='#00d4ff';ctx.textAlign='left';
+  ctx.fillText(fmtSI(iMax,'A'),PAD.l+4,PAD.t+8);
+
+  // Time axis
+  ctx.fillStyle='#3a4f66';ctx.textAlign='center';ctx.font='10px Space Mono';
+  const nTicks=6;
+  for(let k=0;k<=nTicks;k++){
+    const tt=tMin+(tMax-tMin)*k/nTicks;
+    ctx.fillText(fmtTime(tt),PAD.l+k/nTicks*pw,PAD.t+ph+14);
+  }
+  ctx.fillStyle='#4a5b72';ctx.textAlign='center';ctx.font='11px Space Mono';
+  ctx.fillText('Time →',PAD.l+pw/2,H-4);
+}
+
+// ============================================================
+// OSCILLOSCOPE
+// ============================================================
+let scopeAnimFrame=null;
+let scopePersist=null;
+
+function scopeRedraw(){
+  const canvas=document.getElementById('scope-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const tb=parseFloat(document.getElementById('sc-tb').value)||100e-9;
+  const ch1v=parseFloat(document.getElementById('sc-ch1').value)||20;
+  const ch2v=parseFloat(document.getElementById('sc-ch2').value)||2;
+  const nDivH=10,nDivV=8;
+  const dW=W/nDivH,dH=H/nDivV;
+
+  // Background
+  ctx.fillStyle='rgba(0,8,0,0.18)';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,140,0,0.2)';ctx.lineWidth=1;
+  for(let gx=0;gx<=nDivH;gx++){
+    ctx.beginPath();
+    ctx.strokeStyle=gx%5===0?'rgba(0,180,0,0.25)':'rgba(0,120,0,0.12)';
+    ctx.moveTo(gx*dW,0);ctx.lineTo(gx*dW,H);ctx.stroke();
+    // Minor subdivisions
+    if(gx<nDivH){for(let s=1;s<5;s++){
+      ctx.strokeStyle='rgba(0,80,0,0.1)';ctx.beginPath();
+      ctx.moveTo(gx*dW+s*dW/5,0);ctx.lineTo(gx*dW+s*dW/5,H);ctx.stroke();
+    }}
+  }
+  for(let gy=0;gy<=nDivV;gy++){
+    ctx.beginPath();
+    ctx.strokeStyle=gy%4===0?'rgba(0,180,0,0.25)':'rgba(0,120,0,0.12)';
+    ctx.moveTo(0,gy*dH);ctx.lineTo(W,gy*dH);ctx.stroke();
+  }
+
+  // Center crosshairs
+  ctx.strokeStyle='rgba(0,180,0,0.35)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+
+  const {t,v,i}=state.simData;
+  if(!t||t.length<2)return;
+
+  const tWindow=tb*nDivH;
+  const toX=tt=>W*tt/tWindow;
+  const toYv=vv=>H/2-vv/ch1v*dH;
+  const toYi=ii=>H/2-ii/ch2v*dH;
+
+  // CH1 Voltage trace (amber)
+  ctx.beginPath();ctx.strokeStyle='rgba(255,180,0,0.95)';ctx.lineWidth=1.5;
+  ctx.shadowBlur=5;ctx.shadowColor='rgba(255,180,0,0.5)';
+  let started=false;
+  for(let k=0;k<t.length;k++){
+    const x=toX(t[k]);if(x>W)break;
+    const y=toYv(v[k]);
+    if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // CH2 Current trace (green)
+  ctx.beginPath();ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=1.5;
+  ctx.shadowColor='rgba(0,255,100,0.5)';
+  started=false;
+  for(let k=0;k<t.length;k++){
+    const x=toX(t[k]);if(x>W)break;
+    const y=toYi(i[k]);
+    if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur=0;
+
+  // Trigger line
+  const trigPct=parseFloat(document.getElementById('sc-trig').value)/100;
+  const trigY=H/2-trigPct*H/2;
+  ctx.strokeStyle='rgba(255,80,80,0.5)';ctx.lineWidth=1;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(0,trigY);ctx.lineTo(W,trigY);ctx.stroke();
+  ctx.setLineDash([]);
+  // Trigger marker
+  ctx.fillStyle='rgba(255,80,80,0.8)';ctx.beginPath();ctx.moveTo(12,trigY);ctx.lineTo(0,trigY-6);ctx.lineTo(0,trigY+6);ctx.fill();
+
+  // Labels
+  ctx.font='10px Space Mono';ctx.fillStyle='rgba(255,180,0,0.8)';
+  ctx.fillText('CH1 V '+(ch1v<1?(ch1v*1000).toFixed(0)+'mV':ch1v.toFixed(0)+'V')+'/div',8,14);
+  ctx.fillStyle='rgba(0,255,100,0.8)';
+  ctx.fillText('CH2 I '+(ch2v<1?(ch2v*1000).toFixed(0)+'mA':ch2v.toFixed(0)+'A')+'/div',8,28);
+  ctx.fillStyle='rgba(0,180,0,0.6)';
+  ctx.fillText('TIME '+fmtTime(tb)+'/div',W/2-40,14);
+  ctx.fillText(SW[state.sw].shortName,W-80,14);
+}
+
+function updateScopeInfo(){
+  const {v,i,t}=state.simData;
+  if(!t||!t.length)return;
+  const vp=Math.max(...v.map(x=>Math.abs(x)));
+  const ip=Math.max(...i.map(x=>Math.abs(x)));
+  const vmin=Math.min(...v),vmax=Math.max(...v);
+  const el1=document.getElementById('scope-meas-v');
+  const el2=document.getElementById('scope-meas-i');
+  const el3=document.getElementById('scope-distortion');
+  if(el1)el1.innerHTML=`Vmax: ${fmtSI(vmax,'V')}<br>Vmin: ${fmtSI(vmin,'V')}<br>Vp-p: ${fmtSI(vmax-vmin,'V')}`;
+  if(el2)el2.innerHTML=`Ipeak: ${fmtSI(ip,'A')}<br>Irms: ${fmtSI(Math.sqrt(i.reduce((a,x)=>a+x*x,0)/i.length),'A')}`;
+  const sw=SW[state.sw];
+  if(el3)el3.innerHTML=`Switch: ${sw.shortName}<br>Rise: ${sw.specs.rise}<br>Jitter: ${sw.specs.jitter}<br>L_sw: ${sw.specs.Lp}`;
+  // Update readout
+  const ro=document.getElementById('scope-readout');
+  if(ro)ro.innerHTML=`CH1: ${fmtSI(vmax,'V')}<br>CH2: ${fmtSI(ip,'A')}<br>Δt: ${fmtTime(t[t.length-1])}`;
+}
+
+function toggleScope(){
+  state.scopeRunning=!state.scopeRunning;
+  document.getElementById('btn-run').textContent=state.scopeRunning?'RUN':'HOLD';
+  document.getElementById('btn-run').classList.toggle('active',state.scopeRunning);
+}
+function scopeCapture(){
+  const canvas=document.getElementById('scope-canvas');
+  if(!canvas)return;
+  const a=document.createElement('a');
+  a.download='scope_capture.png';a.href=canvas.toDataURL();a.click();
+}
+
+// ============================================================
+// SWITCH CARDS
+// ============================================================
+function buildSwitchCards(){
+  const grid=document.getElementById('switch-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  SW_ORDER.forEach(key=>{
+    const sw=SW[key];
+    const card=document.createElement('div');
+    card.className='sw-card'+(key===state.sw?' selected':'');
+    card.dataset.sw=key;
+    const catColors={Electromechanical:'var(--c)',Solid_State:'var(--a)','Solid-State':'var(--a)','Wide-Bandgap':'var(--p)','Gas-Discharge':'var(--y)'};
+    const cc=catColors[sw.category]||'var(--tx2)';
+    card.innerHTML=`
+      <div class="sw-head">
+        <div class="sw-name">${sw.name}</div>
+        <span class="sw-cat tag" style="color:${cc};background:${cc}22;border:1px solid ${cc}44">${sw.category}</span>
+      </div>
+      <div class="sw-anim" id="anim-${key}">${getSwitchSVG(key,sw.color)}</div>
+      <div class="sw-specs">
+        <div class="sw-spec"><div class="sw-spec-k">RISE TIME</div><div class="sw-spec-v">${sw.specs.rise}</div></div>
+        <div class="sw-spec"><div class="sw-spec-k">JITTER</div><div class="sw-spec-v">${sw.specs.jitter}</div></div>
+        <div class="sw-spec"><div class="sw-spec-k">L PARASITIC</div><div class="sw-spec-v">${sw.specs.Lp}</div></div>
+        <div class="sw-spec"><div class="sw-spec-k">C PARASITIC</div><div class="sw-spec-v">${sw.specs.Cp}</div></div>
+        <div class="sw-spec"><div class="sw-spec-k">MAX VOLTAGE</div><div class="sw-spec-v">${sw.specs.maxV}</div></div>
+        <div class="sw-spec"><div class="sw-spec-k">MAX CURRENT</div><div class="sw-spec-v">${sw.specs.maxI}</div></div>
+      </div>
+      <div class="sw-footer">
+        <div>
+          <div class="feasibility">${sw.feasibility}</div>
+          <div class="rating-bar mt8">${[1,2,3,4,5].map(n=>`<div class="rb${n<=sw.rating?' on':''}"></div>`).join('')}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadSwitch('${key}')">Load ↗</button>
+      </div>`;
+    card.addEventListener('click',(e)=>{if(!e.target.closest('button')){loadSwitch(key);}});
+    grid.appendChild(card);
+  });
+}
+
+function loadSwitch(key){
+  state.sw=key;
+  document.querySelectorAll('.sw-card').forEach(c=>c.classList.toggle('selected',c.dataset.sw===key));
+  if(document.getElementById('sim-switch'))document.getElementById('sim-switch').value=key;
+  updateParasiticInfo();
+  runSimulation();
+  drawSchematic(key);
+  switchTab('simulator');
+}
+
+function getSwitchSVG(key,color){
+  const svgs={
+    reed:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes reed-close{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-8deg)}}
+        @keyframes reed-signal{0%{stroke-dashoffset:200}100%{stroke-dashoffset:0}}
+        .reed-blade{transform-origin:30px 70px;animation:reed-close 1.8s ease-in-out infinite}
+        .sig-line{stroke-dasharray:200;animation:reed-signal 2s linear infinite}
+      </style></defs>
+      <rect x="10" y="20" width="320" height="100" rx="8" fill="#0a1810" stroke="${color}33" stroke-width="1.5"/>
+      <rect x="10" y="20" width="320" height="100" rx="8" fill="none" stroke="${color}" stroke-width="1" opacity="0.4"/>
+      <!-- Coaxial shield -->
+      <rect x="60" y="30" width="220" height="80" rx="4" fill="none" stroke="${color}66" stroke-width="2"/>
+      <text x="170" y="26" fill="${color}88" font-family="Space Mono" font-size="8" text-anchor="middle">Z₀=50Ω COAXIAL</text>
+      <!-- Reed blades -->
+      <g class="reed-blade">
+        <rect x="85" y="64" width="90" height="6" rx="2" fill="${color}" opacity="0.8"/>
+      </g>
+      <rect x="165" y="70" width="90" height="6" rx="2" fill="${color}" opacity="0.8"/>
+      <!-- Inert gas fill indicator -->
+      <text x="170" y="60" fill="${color}44" font-family="Space Mono" font-size="7" text-anchor="middle">N₂ inert gas</text>
+      <!-- Signal path -->
+      <line x1="10" y1="73" x2="85" y2="73" stroke="${color}" stroke-width="2" class="sig-line"/>
+      <line x1="255" y1="73" x2="330" y2="73" stroke="${color}" stroke-width="2"/>
+      <!-- Labels -->
+      <text x="25" y="115" fill="${color}" font-family="Space Mono" font-size="9">IN</text>
+      <text x="300" y="115" fill="${color}" font-family="Space Mono" font-size="9">OUT</text>
+    </svg>`,
+
+    mercury:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes merc-drop{0%,100%{cy:55px;opacity:0.6;r:4px}50%{cy:75px;opacity:1;r:6px}}
+        @keyframes merc-coalesc{0%,100%{opacity:0.4}50%{opacity:1}}
+        .m-drop{animation:merc-drop 1.6s ease-in-out infinite}
+        .m-coil{animation:merc-coalesc 1.6s ease-in-out infinite}
+      </style></defs>
+      <!-- Coil -->
+      <path d="M30 70 Q40 50 50 70 Q60 90 70 70 Q80 50 90 70 Q100 90 110 70" stroke="${color}" stroke-width="2.5" fill="none" opacity="0.7"/>
+      <line x1="20" y1="70" x2="30" y2="70" stroke="${color}" stroke-width="2"/>
+      <text x="65" y="40" fill="${color}88" font-family="Space Mono" font-size="8" text-anchor="middle">COIL</text>
+      <!-- Armature -->
+      <rect x="118" y="55" width="8" height="30" rx="2" fill="${color}66"/>
+      <!-- Mercury contacts -->
+      <ellipse cx="145" cy="62" rx="12" ry="8" fill="#c0c0c0" opacity="0.6"/>
+      <ellipse cx="195" cy="78" rx="12" ry="8" fill="#c0c0c0" opacity="0.6"/>
+      <!-- Mercury drops coalescing -->
+      <circle cx="170" cy="68" r="5" fill="#b0b0c0" class="m-drop"/>
+      <circle cx="165" cy="73" r="3" fill="#c0c0d0" class="m-drop" style="animation-delay:0.3s"/>
+      <circle cx="175" cy="72" r="4" fill="#a0a0b0" class="m-drop" style="animation-delay:0.6s"/>
+      <!-- Mercury pool -->
+      <ellipse cx="170" cy="90" rx="20" ry="6" fill="#9090a0" opacity="0.4" class="m-coil"/>
+      <text x="170" y="120" fill="#c0c0c0" font-family="Space Mono" font-size="8" text-anchor="middle">Hg capillary coalescence</text>
+      <!-- Signal wires -->
+      <line x1="10" y1="70" x2="20" y2="70" stroke="${color}" stroke-width="2"/>
+      <line x1="220" y1="70" x2="330" y2="70" stroke="${color}" stroke-width="2"/>
+      <line x1="220" y1="70" x2="207" y2="76" stroke="${color}" stroke-width="1.5"/>
+    </svg>`,
+
+    gan:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes gan-elec{0%{stroke-dashoffset:80}100%{stroke-dashoffset:0}}
+        @keyframes gan-glow{0%,100%{opacity:0.3;filter:blur(2px)}60%{opacity:0.9;filter:blur(0)}}
+        .gan-ch{stroke-dasharray:80;animation:gan-elec 1.2s linear infinite}
+        .gan-2deg{animation:gan-glow 1.5s ease-in-out infinite}
+      </style></defs>
+      <!-- Die outline -->
+      <rect x="80" y="20" width="180" height="100" rx="4" fill="#0c0820" stroke="${color}44" stroke-width="1"/>
+      <!-- AlGaN layer -->
+      <rect x="80" y="50" width="180" height="14" fill="${color}22" stroke="${color}66" stroke-width="1"/>
+      <text x="96" y="61" fill="${color}aa" font-family="Space Mono" font-size="7">AlGaN</text>
+      <!-- GaN layer -->
+      <rect x="80" y="64" width="180" height="40" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.4)" stroke-width="1"/>
+      <text x="96" y="90" fill="rgba(168,85,247,0.8)" font-family="Space Mono" font-size="7">GaN buffer</text>
+      <!-- 2DEG channel -->
+      <line x1="80" y1="64" x2="260" y2="64" stroke="${color}" stroke-width="2.5" class="gan-2deg"/>
+      <text x="170" y="58" fill="${color}" font-family="Space Mono" font-size="7" text-anchor="middle">2DEG CHANNEL</text>
+      <!-- Electron flow -->
+      <path d="M100 64 L240 64" stroke="#00ff80" stroke-width="1.5" class="gan-ch" opacity="0.8"/>
+      <!-- Gate -->
+      <rect x="155" y="36" width="30" height="18" fill="${color}33" stroke="${color}" stroke-width="1.5" rx="2"/>
+      <text x="170" y="49" fill="${color}" font-family="Space Mono" font-size="8" text-anchor="middle">G</text>
+      <line x1="170" y1="36" x2="170" y2="26" stroke="${color}" stroke-width="2"/>
+      <line x1="170" y1="26" x2="140" y2="26" stroke="${color}" stroke-width="1.5"/>
+      <text x="130" y="22" fill="${color}88" font-family="Space Mono" font-size="7">GATE</text>
+      <!-- Drain/Source -->
+      <text x="96" y="42" fill="var(--a)" font-family="Space Mono" font-size="8">D</text>
+      <text x="236" y="42" fill="var(--c)" font-family="Space Mono" font-size="8">S</text>
+      <line x1="100" y1="54" x2="100" y2="64" stroke="var(--a)" stroke-width="2"/>
+      <line x1="240" y1="54" x2="240" y2="64" stroke="var(--c)" stroke-width="2"/>
+      <!-- Lcs label -->
+      <text x="245" y="100" fill="var(--r)" font-family="Space Mono" font-size="7">L_cs</text>
+      <!-- External wires -->
+      <line x1="10" y1="64" x2="80" y2="64" stroke="var(--a)" stroke-width="2"/>
+      <line x1="260" y1="64" x2="330" y2="64" stroke="var(--c)" stroke-width="2"/>
+    </svg>`,
+
+    mosfet:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes qg-fill{0%{height:0}50%{height:35px}100%{height:0}}
+        @keyframes miller-pause{0%,40%,100%{opacity:0.3}50%,90%{opacity:1}}
+        .qg-bar{animation:qg-fill 2.5s ease-in-out infinite}
+        .miller-ind{animation:miller-pause 2.5s ease-in-out infinite}
+      </style></defs>
+      <!-- MOSFET symbol -->
+      <line x1="140" y1="30" x2="140" y2="110" stroke="var(--a)" stroke-width="2"/>
+      <!-- Gate line -->
+      <line x1="100" y1="70" x2="130" y2="70" stroke="var(--a)" stroke-width="2"/>
+      <line x1="130" y1="50" x2="130" y2="90" stroke="var(--a)" stroke-width="3"/>
+      <text x="80" y="74" fill="var(--a)" font-family="Space Mono" font-size="10" font-weight="bold">G</text>
+      <!-- Drain -->
+      <line x1="140" y1="40" x2="170" y2="40" stroke="var(--a)" stroke-width="2"/>
+      <line x1="170" y1="40" x2="260" y2="40" stroke="var(--a)" stroke-width="2"/>
+      <text x="150" y="35" fill="var(--a)" font-family="Space Mono" font-size="9">D</text>
+      <!-- Source -->
+      <line x1="140" y1="100" x2="170" y2="100" stroke="var(--c)" stroke-width="2"/>
+      <line x1="170" y1="100" x2="260" y2="100" stroke="var(--c)" stroke-width="2"/>
+      <text x="150" y="118" fill="var(--c)" font-family="Space Mono" font-size="9">S</text>
+      <!-- Channel -->
+      <line x1="140" y1="50" x2="140" y2="90" stroke="#33ff66" stroke-width="3" opacity="0.7"/>
+      <!-- Body diode -->
+      <polygon points="160,60 160,80 175,70" fill="none" stroke="var(--r)" stroke-width="1.5"/>
+      <text x="176" y="73" fill="var(--r)" font-family="Space Mono" font-size="7">body</text>
+      <!-- Cgd Miller cap -->
+      <text x="195" y="38" fill="var(--r)" font-family="Space Mono" font-size="7" class="miller-ind">Cgd</text>
+      <line x1="210" y1="40" x2="210" y2="55" stroke="var(--r)" stroke-width="1.5" class="miller-ind"/>
+      <line x1="205" y1="55" x2="215" y2="55" stroke="var(--r)" stroke-width="2" class="miller-ind"/>
+      <line x1="205" y1="60" x2="215" y2="60" stroke="var(--r)" stroke-width="2" class="miller-ind"/>
+      <line x1="210" y1="60" x2="210" y2="70" stroke="var(--r)" stroke-width="1.5" class="miller-ind"/>
+      <!-- Coss indicator -->
+      <text x="230" y="73" fill="var(--y)" font-family="Space Mono" font-size="7">Coss</text>
+      <line x1="248" y1="50" x2="248" y2="62" stroke="var(--y)" stroke-width="1.5"/>
+      <line x1="242" y1="62" x2="254" y2="62" stroke="var(--y)" stroke-width="2.5"/>
+      <line x1="242" y1="67" x2="254" y2="67" stroke="var(--y)" stroke-width="2.5"/>
+      <line x1="248" y1="67" x2="248" y2="80" stroke="var(--y)" stroke-width="1.5"/>
+      <!-- Qg charge bar -->
+      <rect x="270" y="35" width="14" height="70" rx="2" fill="#0d140d" stroke="var(--g)" stroke-width="1"/>
+      <rect x="272" y="105" width="10" class="qg-bar" fill="var(--g)" style="transform:scaleY(-1);transform-origin:272px 105px"/>
+      <text x="277" y="30" fill="var(--g)" font-family="Space Mono" font-size="7" text-anchor="middle">Qg</text>
+      <!-- Wires -->
+      <line x1="10" y1="40" x2="100" y2="40" stroke="var(--a)" stroke-width="2"/>
+      <line x1="10" y1="40" x2="10" y2="70" stroke="var(--a)" stroke-width="2"/>
+      <line x1="260" y1="40" x2="330" y2="40" stroke="var(--a)" stroke-width="2"/>
+    </svg>`,
+
+    igbt:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes tail-current{0%,100%{opacity:0.2;stroke-width:1}60%{opacity:1;stroke-width:2.5}}
+        @keyframes minority-carrier{0%{cy:90px}100%{cy:50px}}
+        .tail{animation:tail-current 2s ease-in-out infinite}
+        .mc{animation:minority-carrier 1.8s ease-in-out infinite;opacity:0.7}
+      </style></defs>
+      <!-- MOS gate section -->
+      <rect x="90" y="20" width="60" height="35" rx="3" fill="#0c1820" stroke="var(--a)88" stroke-width="1.5"/>
+      <text x="120" y="42" fill="var(--a)" font-family="Space Mono" font-size="9" text-anchor="middle" font-weight="bold">MOS</text>
+      <text x="120" y="52" fill="var(--a)88" font-family="Space Mono" font-size="7" text-anchor="middle">GATE</text>
+      <!-- Bipolar drift region -->
+      <rect x="90" y="60" width="60" height="50" rx="3" fill="#0c1510" stroke="var(--o)88" stroke-width="1.5"/>
+      <text x="120" y="88" fill="var(--o)" font-family="Space Mono" font-size="8" text-anchor="middle">BIPOLAR</text>
+      <text x="120" y="100" fill="var(--o)88" font-family="Space Mono" font-size="7" text-anchor="middle">DRIFT</text>
+      <!-- Gate terminal -->
+      <line x1="40" y1="37" x2="90" y2="37" stroke="var(--a)" stroke-width="2"/>
+      <text x="50" y="33" fill="var(--a)" font-family="Space Mono" font-size="9">G</text>
+      <!-- Collector -->
+      <line x1="150" y1="37" x2="300" y2="37" stroke="var(--c)" stroke-width="2"/>
+      <text x="280" y="33" fill="var(--c)" font-family="Space Mono" font-size="9">C</text>
+      <!-- Emitter -->
+      <line x1="150" y1="100" x2="300" y2="100" stroke="var(--g)" stroke-width="2"/>
+      <text x="280" y="118" fill="var(--g)" font-family="Space Mono" font-size="9">E</text>
+      <!-- Minority carriers -->
+      <circle cx="120" cy="75" r="3" fill="var(--p)" class="mc"/>
+      <circle cx="110" cy="80" r="2.5" fill="var(--p)" class="mc" style="animation-delay:0.4s"/>
+      <circle cx="130" cy="78" r="2" fill="var(--p)" class="mc" style="animation-delay:0.8s"/>
+      <!-- Tail current indicator -->
+      <path d="M170 37 Q195 68 195 100" stroke="var(--r)" stroke-width="2" fill="none" class="tail" stroke-dasharray="6,4"/>
+      <text x="205" y="70" fill="var(--r)" font-family="Space Mono" font-size="7" class="tail">TAIL</text>
+      <!-- Cies -->
+      <text x="250" y="55" fill="var(--y)" font-family="Space Mono" font-size="7">Cies</text>
+      <line x1="265" y1="40" x2="265" y2="50" stroke="var(--y)" stroke-width="1.5"/>
+      <line x1="259" y1="50" x2="271" y2="50" stroke="var(--y)" stroke-width="2"/>
+      <line x1="259" y1="55" x2="271" y2="55" stroke="var(--y)" stroke-width="2"/>
+      <line x1="265" y1="55" x2="265" y2="65" stroke="var(--y)" stroke-width="1.5"/>
+      <!-- Wires -->
+      <line x1="10" y1="37" x2="40" y2="37" stroke="var(--c)" stroke-width="2"/>
+      <line x1="300" y1="37" x2="330" y2="37" stroke="var(--c)" stroke-width="2"/>
+    </svg>`,
+
+    scr:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes scr-spread{0%{r:3}60%{r:40}100%{r:3}}
+        @keyframes scr-latch{0%,100%{opacity:0.3}50%{opacity:1}}
+        .spread-wave{animation:scr-spread 2s ease-out infinite;fill:none;stroke:var(--r);stroke-width:1.5;opacity:0.6}
+        .latch-ind{animation:scr-latch 2s ease-in-out infinite}
+      </style></defs>
+      <!-- PNPN layers -->
+      <rect x="100" y="20" width="80" height="22" rx="2" fill="#1a0820" stroke="var(--p)88" stroke-width="1.5"/>
+      <text x="140" y="35" fill="var(--p)" font-family="Space Mono" font-size="9" text-anchor="middle">P</text>
+      <rect x="100" y="42" width="80" height="22" rx="2" fill="#0a1820" stroke="var(--c)88" stroke-width="1.5"/>
+      <text x="140" y="57" fill="var(--c)" font-family="Space Mono" font-size="9" text-anchor="middle">N</text>
+      <rect x="100" y="64" width="80" height="22" rx="2" fill="#1a0820" stroke="var(--p)88" stroke-width="1.5"/>
+      <text x="140" y="79" fill="var(--p)" font-family="Space Mono" font-size="9" text-anchor="middle">P</text>
+      <rect x="100" y="86" width="80" height="22" rx="2" fill="#0a1820" stroke="var(--c)88" stroke-width="1.5"/>
+      <text x="140" y="101" fill="var(--c)" font-family="Space Mono" font-size="9" text-anchor="middle">N</text>
+      <!-- PNPN label -->
+      <text x="140" y="120" fill="var(--tx2)" font-family="Space Mono" font-size="7" text-anchor="middle">4-LAYER PNPN</text>
+      <!-- Gate trigger -->
+      <line x1="60" y1="75" x2="100" y2="75" stroke="var(--g)" stroke-width="2"/>
+      <text x="50" y="72" fill="var(--g)" font-family="Space Mono" font-size="8">G</text>
+      <!-- Current spreading waves -->
+      <circle cx="140" cy="75" r="3" class="spread-wave"/>
+      <circle cx="140" cy="75" r="15" class="spread-wave" style="animation-delay:0.5s"/>
+      <circle cx="140" cy="75" r="28" class="spread-wave" style="animation-delay:1s"/>
+      <!-- Anode/Cathode -->
+      <line x1="140" y1="20" x2="140" y2="10" stroke="var(--a)" stroke-width="2"/>
+      <line x1="100" y1="10" x2="240" y2="10" stroke="var(--a)" stroke-width="2"/>
+      <text x="220" y="22" fill="var(--a)" font-family="Space Mono" font-size="8">ANODE</text>
+      <line x1="140" y1="108" x2="140" y2="130" stroke="var(--c)" stroke-width="2"/>
+      <line x1="100" y1="130" x2="240" y2="130" stroke="var(--c)" stroke-width="2"/>
+      <text x="210" y="126" fill="var(--c)" font-family="Space Mono" font-size="8">CATHODE</text>
+      <!-- Latching indicator -->
+      <text x="220" y="75" fill="var(--y)" font-family="Space Mono" font-size="8" class="latch-ind">LATCHED</text>
+      <!-- Wires -->
+      <line x1="10" y1="10" x2="100" y2="10" stroke="var(--a)" stroke-width="2"/>
+      <line x1="240" y1="10" x2="330" y2="10" stroke="var(--a)" stroke-width="2"/>
+    </svg>`,
+
+    tsg:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes plasma-arc{0%,100%{opacity:0;stroke-width:1}50%{opacity:1;stroke-width:3}}
+        @keyframes ionize{0%,100%{fill:rgba(255,215,0,0.05)}50%{fill:rgba(255,215,0,0.3)}}
+        @keyframes spark{0%,100%{opacity:0}20%,40%,60%,80%{opacity:1}30%,50%,70%,90%{opacity:0.3}}
+        .arc{animation:plasma-arc 1.2s ease-in-out infinite}
+        .gas-fill{animation:ionize 1.2s ease-in-out infinite}
+        .spark-line{animation:spark 0.8s ease-in-out infinite}
+      </style></defs>
+      <!-- Gas envelope -->
+      <ellipse cx="170" cy="70" rx="100" ry="50" fill="none" stroke="var(--y)88" stroke-width="2"/>
+      <!-- Gas fill -->
+      <ellipse cx="170" cy="70" rx="98" ry="48" class="gas-fill"/>
+      <text x="170" y="20" fill="var(--y)66" font-family="Space Mono" font-size="7" text-anchor="middle">SF₆/Ar PRESSURIZED</text>
+      <!-- Main electrodes -->
+      <rect x="60" y="58" width="30" height="24" rx="4" fill="var(--y)33" stroke="var(--y)" stroke-width="2"/>
+      <rect x="250" y="58" width="30" height="24" rx="4" fill="var(--y)33" stroke="var(--y)" stroke-width="2"/>
+      <text x="75" y="74" fill="var(--y)" font-family="Space Mono" font-size="8" text-anchor="middle">+</text>
+      <text x="265" y="74" fill="var(--y)" font-family="Space Mono" font-size="8" text-anchor="middle">−</text>
+      <!-- Trigger electrode -->
+      <rect x="152" y="25" width="36" height="20" rx="3" fill="#0a1400" stroke="var(--r)88" stroke-width="1.5"/>
+      <text x="170" y="39" fill="var(--r)" font-family="Space Mono" font-size="8" text-anchor="middle">TRIG</text>
+      <line x1="170" y1="45" x2="170" y2="58" stroke="var(--r)" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <!-- Plasma arc -->
+      <path d="M90 70 Q115 50 140 70 Q160 88 185 70 Q210 52 240 70" stroke="var(--y)" stroke-width="2.5" fill="none" class="arc"/>
+      <!-- Spark noise indicators -->
+      <line x1="130" y1="60" x2="125" y2="52" stroke="var(--y)" stroke-width="2" class="spark-line"/>
+      <line x1="150" y1="80" x2="160" y2="90" stroke="var(--y)" stroke-width="1.5" class="spark-line" style="animation-delay:0.15s"/>
+      <line x1="200" y1="62" x2="210" y2="54" stroke="var(--y)" stroke-width="2" class="spark-line" style="animation-delay:0.3s"/>
+      <!-- Wires -->
+      <line x1="10" y1="70" x2="60" y2="70" stroke="var(--y)" stroke-width="2.5"/>
+      <line x1="280" y1="70" x2="330" y2="70" stroke="var(--y)" stroke-width="2.5"/>
+    </svg>`,
+
+    vcb:`<svg viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>
+        @keyframes vcb-bounce{
+          0%{transform:translateY(0)}15%{transform:translateY(-12px)}
+          30%{transform:translateY(-5px)}45%{transform:translateY(-9px)}
+          60%{transform:translateY(-3px)}75%{transform:translateY(-6px)}
+          90%{transform:translateY(-1px)}100%{transform:translateY(0)}
+        }
+        @keyframes prestrike{0%,100%{opacity:0}50%{opacity:0.9}}
+        .vcb-moving{animation:vcb-bounce 3s ease-in-out infinite}
+        .prestrike-arc{animation:prestrike 1.2s ease-in-out infinite}
+      </style></defs>
+      <!-- Vacuum chamber -->
+      <ellipse cx="170" cy="70" rx="120" ry="55" fill="none" stroke="var(--r)55" stroke-width="2"/>
+      <text x="170" y="18" fill="var(--r)55" font-family="Space Mono" font-size="7" text-anchor="middle">VACUUM 10⁻⁵ Pa</text>
+      <!-- Fixed contact (bottom) -->
+      <rect x="120" y="90" width="100" height="16" rx="3" fill="#330000" stroke="var(--r)" stroke-width="2"/>
+      <text x="170" y="102" fill="var(--r)" font-family="Space Mono" font-size="7" text-anchor="middle">CuCr FIXED</text>
+      <!-- Moving contact (top, bouncing) -->
+      <g class="vcb-moving">
+        <rect x="120" y="60" width="100" height="16" rx="3" fill="#330000" stroke="var(--r)" stroke-width="2"/>
+        <text x="170" y="72" fill="var(--r)" font-family="Space Mono" font-size="7" text-anchor="middle">CuCr MOVING</text>
+      </g>
+      <!-- Prestrike arc -->
+      <path d="M160 76 Q155 83 160 90" stroke="var(--y)" stroke-width="2.5" fill="none" class="prestrike-arc"/>
+      <path d="M180 76 Q185 83 180 90" stroke="var(--y)" stroke-width="2" fill="none" class="prestrike-arc" style="animation-delay:0.3s"/>
+      <!-- Bounce arrows -->
+      <text x="240" y="65" fill="var(--r)88" font-family="Space Mono" font-size="8">↕ BOUNCE</text>
+      <text x="240" y="78" fill="var(--r)88" font-family="Space Mono" font-size="7">1–8 ms</text>
+      <!-- Actuator spring -->
+      <path d="M170 40 Q175 34 170 28 Q165 22 170 16" stroke="var(--tx2)" stroke-width="2" fill="none"/>
+      <text x="176" y="30" fill="var(--tx2)" font-family="Space Mono" font-size="6">SPRING</text>
+      <!-- Wires -->
+      <line x1="10" y1="98" x2="120" y2="98" stroke="var(--r)" stroke-width="2.5"/>
+      <line x1="220" y1="98" x2="330" y2="98" stroke="var(--r)" stroke-width="2.5"/>
+    </svg>`
+  };
+  return svgs[key]||`<text fill="${color}" font-family="Space Mono" font-size="14" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">${key.toUpperCase()}</text>`;
+}
+
+// ============================================================
+// SCHEMATIC BUILDER
+// ============================================================
+function buildSchematicButtons(){
+  const div=document.getElementById('schema-btns');
+  if(!div)return;
+  div.innerHTML='';
+  SW_ORDER.forEach(key=>{
+    const sw=SW[key];
+    const btn=document.createElement('button');
+    btn.className='btn btn-outline btn-sm';
+    btn.style.cssText=`color:${sw.color};border-color:${sw.color}66;text-align:left;justify-content:flex-start;`;
+    btn.textContent=sw.shortName;
+    btn.onclick=()=>drawSchematic(key);
+    div.appendChild(btn);
+  });
+}
+
+function drawSchematic(key){
+  const sw=SW[key];
+  const svg=document.getElementById('schematic-svg');
+  if(!svg)return;
+  const p=sw.params;
+  const color=sw.color;
+
+  // SVG viewBox: 760x380
+  svg.innerHTML=`
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="${color}"/>
+    </marker>
+    <marker id="arr-g" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#00ff80"/>
+    </marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <style>
+      @keyframes sch-flow{0%{stroke-dashoffset:40}100%{stroke-dashoffset:0}}
+      .flow-line{stroke-dasharray:8,4;animation:sch-flow 1s linear infinite}
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="760" height="380" fill="#060b0f"/>
+  <text x="380" y="20" fill="#3a4f66" font-family="Space Mono" font-size="10" text-anchor="middle">RLC DISCHARGE EQUIVALENT CIRCUIT — ${sw.name.toUpperCase()}</text>
+
+  <!-- V_source (DUT charged) -->
+  <circle cx="60" cy="190" r="30" fill="#0c1018" stroke="var(--a)" stroke-width="2"/>
+  <text x="60" y="186" fill="var(--a)" font-family="Space Mono" font-size="9" text-anchor="middle">V₀</text>
+  <text x="60" y="198" fill="var(--a)88" font-family="Space Mono" font-size="8" text-anchor="middle">${state.V0}V</text>
+  <line x1="60" y1="160" x2="60" y2="100" stroke="var(--a)" stroke-width="2"/>
+  <line x1="60" y1="220" x2="60" y2="280" stroke="var(--a)" stroke-width="2"/>
+
+  <!-- Top bus (forward path) -->
+  <line x1="60" y1="100" x2="680" y2="100" stroke="var(--a)" stroke-width="2.5" marker-end="url(#arr)"/>
+  <!-- Animated flow -->
+  <line x1="60" y1="100" x2="680" y2="100" stroke="var(--g)" stroke-width="2" opacity="0.7" class="flow-line"/>
+
+  <!-- Bottom return path -->
+  <line x1="680" y1="280" x2="60" y2="280" stroke="var(--c)" stroke-width="2.5" marker-end="url(#arr-g)"/>
+
+  <!-- L_ESL -->
+  ${drawInductor(100,85,'L_ESL',fmtSI(state.L*0.3,'H'),'var(--a)')}
+
+  <!-- R_ESR -->
+  ${drawResistor(230,85,'R_ESR',fmtSI(state.R*0.2,'Ω'),'var(--a)')}
+
+  <!-- C_DUT -->
+  <line x1="350" y1="100" x2="350" y2="150" stroke="var(--a)" stroke-width="2"/>
+  <line x1="320" y1="150" x2="380" y2="150" stroke="var(--a)" stroke-width="3"/>
+  <line x1="320" y1="160" x2="380" y2="160" stroke="var(--a)" stroke-width="3"/>
+  <line x1="350" y1="160" x2="350" y2="220" stroke="var(--a)" stroke-width="2"/>
+  <line x1="350" y1="220" x2="350" y2="280" stroke="var(--c)" stroke-width="2"/>
+  <text x="395" y="152" fill="var(--c)" font-family="Space Mono" font-size="9">C_DUT</text>
+  <text x="395" y="164" fill="var(--c)88" font-family="Space Mono" font-size="8">${fmtSI(state.C,'F')}</text>
+
+  <!-- L_trace -->
+  ${drawInductor(460,85,'L_trace',fmtSI(state.L*0.2,'H'),'var(--a)')}
+
+  <!-- SWITCH BLOCK -->
+  ${drawSwitchBlock(580,100,280,sw,color)}
+
+  <!-- R_load CVR -->
+  <line x1="680" y1="100" x2="680" y2="160" stroke="var(--a)" stroke-width="2"/>
+  <rect x="665" y="160" width="30" height="50" rx="3" fill="#0c1018" stroke="var(--o)" stroke-width="1.5"/>
+  <text x="680" y="182" fill="var(--o)" font-family="Space Mono" font-size="8" text-anchor="middle">CVR</text>
+  <text x="680" y="194" fill="var(--o)88" font-family="Space Mono" font-size="7" text-anchor="middle">${fmtSI(state.R*0.5,'Ω')}</text>
+  <line x1="680" y1="210" x2="680" y2="280" stroke="var(--c)" stroke-width="2"/>
+
+  <!-- Probe loading indicator -->
+  ${state.probe!=='none'?drawProbe(520,240,state.probe):''}
+
+  <!-- Ground symbols -->
+  <line x1="60" y1="280" x2="60" y2="300" stroke="var(--c)" stroke-width="2"/>
+  <line x1="40" y1="300" x2="80" y2="300" stroke="var(--c)" stroke-width="2"/>
+  <line x1="48" y1="308" x2="72" y2="308" stroke="var(--c)" stroke-width="1.5"/>
+  <line x1="56" y1="316" x2="64" y2="316" stroke="var(--c)" stroke-width="1"/>
+  <line x1="680" y1="280" x2="680" y2="300" stroke="var(--c)" stroke-width="2"/>
+  <line x1="660" y1="300" x2="700" y2="300" stroke="var(--c)" stroke-width="2"/>
+  <line x1="668" y1="308" x2="692" y2="308" stroke="var(--c)" stroke-width="1.5"/>
+
+  <!-- V measurement point -->
+  <circle cx="350" cy="100" r="5" fill="var(--a)" filter="url(#glow)"/>
+  <text x="355" y="96" fill="var(--a)" font-family="Space Mono" font-size="8">V_DUT</text>
+  `;
+
+  // Update parasitic values
+  const vDiv=document.getElementById('schema-vals');
+  if(vDiv)vDiv.innerHTML=
+    `L_switch: ${fmtSI(p.L_sw,'H')}<br>`+
+    `C_switch: ${fmtSI(p.C_sw,'F')}<br>`+
+    `R_switch: ${fmtSI(p.R_sw,'Ω')}<br>`+
+    `L_ESL: ${fmtSI(state.L*0.3,'H')}<br>`+
+    `R_ESR: ${fmtSI(state.R*0.2,'Ω')}<br>`+
+    `C_DUT: ${fmtSI(state.C,'F')}<br>`+
+    `R_CVR: ${fmtSI(state.R*0.5,'Ω')}`;
+}
+
+function drawInductor(x,y,label,val,color){
+  return`
+  <line x1="${x}" y1="${y+15}" x2="${x+14}" y2="${y+15}" stroke="${color}" stroke-width="2"/>
+  <path d="M${x+14} ${y+15} Q${x+18} ${y+5} ${x+25} ${y+15} Q${x+29} ${y+5} ${x+36} ${y+15} Q${x+40} ${y+5} ${x+47} ${y+15} Q${x+51} ${y+5} ${x+58} ${y+15}" stroke="${color}" fill="none" stroke-width="2"/>
+  <line x1="${x+58}" y1="${y+15}" x2="${x+75}" y2="${y+15}" stroke="${color}" stroke-width="2"/>
+  <text x="${x+38}" y="${y+35}" fill="${color}" font-family="Space Mono" font-size="8" text-anchor="middle">${label}</text>
+  <text x="${x+38}" y="${y+47}" fill="${color}88" font-family="Space Mono" font-size="7" text-anchor="middle">${val}</text>`;
+}
+
+function drawResistor(x,y,label,val,color){
+  return`
+  <line x1="${x}" y1="${y+15}" x2="${x+10}" y2="${y+15}" stroke="${color}" stroke-width="2"/>
+  <rect x="${x+10}" y="${y+7}" width="50" height="16" rx="2" fill="#0c1018" stroke="${color}" stroke-width="1.5"/>
+  <line x1="${x+60}" y1="${y+15}" x2="${x+75}" y2="${y+15}" stroke="${color}" stroke-width="2"/>
+  <text x="${x+35}" y="${y+35}" fill="${color}" font-family="Space Mono" font-size="8" text-anchor="middle">${label}</text>
+  <text x="${x+35}" y="${y+47}" fill="${color}88" font-family="Space Mono" font-size="7" text-anchor="middle">${val}</text>`;
+}
+
+function drawSwitchBlock(x,y,y2,sw,color){
+  const key=sw.params.type;
+  const p=sw.params;
+  let inner='';
+
+  // Common switch box
+  const bx=x-50,by1=y,bby=y2;
+  inner+=`
+  <line x1="${x-60}" y1="${y}" x2="${x-50}" y2="${y}" stroke="${color}" stroke-width="2.5"/>
+  <rect x="${x-50}" y="${y-30}" width="110" height="60" rx="6" fill="#0a0f1a" stroke="${color}" stroke-width="2"/>
+  <text x="${x+5}" y="${y-8}" fill="${color}" font-family="Space Mono" font-size="9" text-anchor="middle">${sw.shortName}</text>
+  <text x="${x+5}" y="${y+5}" fill="${color}88" font-family="Space Mono" font-size="7" text-anchor="middle">R=${fmtSI(p.R_sw,'Ω')}</text>
+  <line x1="${x+60}" y1="${y}" x2="${x+70}" y2="${y}" stroke="${color}" stroke-width="2.5"/>`;
+
+  // Switch-specific parasitics
+  if(key==='mosfet'||key==='gan'){
+    // Coss in parallel
+    inner+=`
+    <line x1="${x-10}" y1="${y}" x2="${x-10}" y2="${y+60}" stroke="var(--r)" stroke-width="1.5"/>
+    <line x1="${x-10}" y1="${y+55}" x2="${x+20}" y2="${y+55}" stroke="var(--r)" stroke-width="2"/>
+    <line x1="${x-10}" y1="${y+65}" x2="${x+20}" y2="${y+65}" stroke="var(--r)" stroke-width="2"/>
+    <line x1="${x+5}" y1="${y+65}" x2="${x+5}" y2="${y+100}" stroke="var(--r)" stroke-width="1.5"/>
+    <line x1="${x-10}" y1="${y+100}" x2="${x+60}" y2="${y+100}" stroke="var(--r)" stroke-width="1.5"/>
+    <line x1="${x+60}" y1="${y+100}" x2="${x+60}" y2="${y}" stroke="var(--r)" stroke-width="1.5"/>
+    <text x="${x+28}" y="${y+63}" fill="var(--r)" font-family="Space Mono" font-size="8">Coss</text>
+    <text x="${x+28}" y="${y+75}" fill="var(--r)88" font-family="Space Mono" font-size="7">${fmtSI(p.C_sw,'F')}</text>`;
+    if(key==='gan'){
+      inner+=`<text x="${x-40}" y="${y+90}" fill="var(--p)" font-family="Space Mono" font-size="7">L_cs=${fmtSI(p.Lcs||0.5e-9,'H')}</text>`;
+    }
+  }
+  if(key==='igbt'||key==='scr'){
+    inner+=`<text x="${x-40}" y="${y+90}" fill="var(--y)" font-family="Space Mono" font-size="7">C_ies=${fmtSI(p.C_sw,'F')}</text>
+    <text x="${x-40}" y="${y+102}" fill="var(--r)" font-family="Space Mono" font-size="7">TAIL=${fmtSI(p.tailTime||p.spreadTime||2e-6,'s')}</text>`;
+  }
+  if(key==='vcb'){
+    inner+=`<text x="${x-40}" y="${y+90}" fill="var(--r)" font-family="Space Mono" font-size="7">BOUNCE ${fmtSI(p.bounceTime||3e-3,'s')}</text>`;
+  }
+  if(key==='tsg'){
+    inner+=`<text x="${x-40}" y="${y+90}" fill="var(--y)" font-family="Space Mono" font-size="7">JITTER ${fmtSI(p.jitter||50e-9,'s')}</text>
+    <text x="${x-40}" y="${y+102}" fill="var(--y)" font-family="Space Mono" font-size="7">PLASMA V≈25V</text>`;
+  }
+
+  return inner;
+}
+
+function drawProbe(x,y,probeType){
+  const labels={passive10x:'10× Passive\n10MΩ / 13pF',active:'Active FET\n1MΩ / 1.5pF',resistive:'Resistive Div\n450Ω + 50Ω'};
+  const Cp={passive10x:13e-12,active:1.5e-12,resistive:0.5e-12};
+  return`
+  <line x1="350" y1="${y-30}" x2="350" y2="${y}" stroke="var(--p)" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="${x-60}" y="${y}" width="120" height="36" rx="4" fill="#100a20" stroke="var(--p)88" stroke-width="1.5"/>
+  <text x="${x}" y="${y+13}" fill="var(--p)" font-family="Space Mono" font-size="8" text-anchor="middle">PROBE</text>
+  <text x="${x}" y="${y+24}" fill="var(--p)88" font-family="Space Mono" font-size="7" text-anchor="middle">${labels[probeType]||''}</text>
+  <circle cx="350" cy="${y-30}" r="3" fill="var(--p)"/>`;
+}
+
+// ============================================================
+// COMPARISON MATRIX
+// ============================================================
+let matrixData=SW_ORDER.map(k=>{const s=SW[k];return{key:k,...s.matrix,name:s.name,shortName:s.shortName,cat:s.matrix.cat,rec:s.rec};});
+let matrixFiltered=[...matrixData];
+
+function buildMatrix(){
+  renderMatrix();
+}
+
+function filterMatrix(f,btn){
+  state.filter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  switch(f){
+    case'all':matrixFiltered=[...matrixData];break;
+    case'em':matrixFiltered=matrixData.filter(d=>d.cat==='em');break;
+    case'ss':matrixFiltered=matrixData.filter(d=>d.cat==='ss');break;
+    case'fast':matrixFiltered=matrixData.filter(d=>d.rise<=5e-9);break;
+    case'hv':matrixFiltered=matrixData.filter(d=>d.maxV>1000);break;
+    case'rec':matrixFiltered=matrixData.filter(d=>d.rec);break;
+  }
+  renderMatrix();
+}
+
+function sortMatrix(col){
+  const ths=document.querySelectorAll('thead th');
+  ths.forEach((th,i)=>{th.classList.remove('asc','desc','sorted');});
+  if(state.sortCol===col)state.sortDir*=-1;else{state.sortCol=col;state.sortDir=1;}
+  ths[col].classList.add('sorted',state.sortDir===1?'asc':'desc');
+  const keys=['name','rise','jitter','Lp','Cp','maxV','maxI','dist','feasibility'];
+  const k=keys[col];
+  matrixFiltered.sort((a,b)=>{
+    const av=a[k],bv=b[k];
+    if(typeof av==='number')return(av-bv)*state.sortDir;
+    return String(av).localeCompare(String(bv))*state.sortDir;
+  });
+  renderMatrix();
+}
+
+function cellClass(v,thresholds,invert=false){
+  if(typeof v!=='number')return'cell-m';
+  const[good,warn]=invert?[thresholds[1],thresholds[0]]:[thresholds[0],thresholds[1]];
+  if((!invert&&v<=good)||(invert&&v>=good))return'cell-c';
+  if((!invert&&v<=warn)||(invert&&v>=warn))return'cell-w';
+  return'cell-r';
+}
+
+function renderMatrix(){
+  const tbody=document.getElementById('matrix-tbody');
+  if(!tbody)return;
+  const catLabel={em:'Electromechanical',ss:'Solid-State',gas:'Gas-Discharge'};
+  const catColor={em:'var(--c)',ss:'var(--a)',gas:'var(--y)'};
+  tbody.innerHTML=matrixFiltered.map(d=>{
+    const sw=SW[d.key];
+    return`<tr>
+      <td>
+        <div class="cell-name" style="color:${sw.color}">${d.name}${d.rec?' <span class="rec-star">★</span>':''}</div>
+        <div class="cell-cat" style="color:${catColor[d.cat]||'var(--tx2)'}">${catLabel[d.cat]||d.cat}</div>
+      </td>
+      <td class="cell-mono ${cellClass(d.rise,[5e-9,100e-9])}">${fmtTime(d.rise)}</td>
+      <td class="cell-mono ${cellClass(d.jitter,[1e-12,100e-9])}">${fmtTime(d.jitter)}</td>
+      <td class="cell-mono ${cellClass(d.Lp,[1e-9,20e-9])}">${fmtSI(d.Lp,'H')}</td>
+      <td class="cell-mono ${cellClass(d.Cp,[1e-12,1e-9])}">${fmtSI(d.Cp,'F')}</td>
+      <td class="cell-mono ${cellClass(d.maxV,[1000,10000],true)}">${fmtSI(d.maxV,'V')}</td>
+      <td class="cell-mono ${cellClass(d.maxI,[100,1000],true)}">${fmtSI(d.maxI,'A')}</td>
+      <td class="cell-mono" style="color:var(--tx)">${d.dist}</td>
+      <td style="font-size:11px;color:var(--tx2)">${sw.feasibility}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// THEORY NAV
+// ============================================================
+function initTheoryNav(){
+  const links=document.querySelectorAll('.theory-nav a');
+  const sections=document.querySelectorAll('.theory-section');
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){
+      links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));
+    }});
+  },{threshold:0.3,rootMargin:'-60px 0px -60% 0px'});
+  sections.forEach(s=>obs.observe(s));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function id(s){return document.getElementById(s)}
+
+window.addEventListener('load',()=>{
+  buildSwitchCards();
+  buildMatrix();
+  buildSchematicButtons();
+  updateParasiticInfo();
+  // init log sliders
+  syncSliderLog({id:'sl-c',value:-8},'lbl-c','F');
+  syncSliderLog({id:'sl-l',value:-8},'lbl-l','H');
+  syncSliderLog({id:'sl-r',value:0},'lbl-r','Ω');
+  runSimulation();
+});
+</script>
+</body>
+</html>
