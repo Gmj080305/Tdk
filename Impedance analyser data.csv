@@ -1,0 +1,38 @@
+﻿TDK B32926,,,,
+freq,ESL,C,ESR,equivalent series LCR analysis values
+1KHz,-9mH,2.82uF,19.1mOhm,
+100KHz,-875nH,2.9uF,8.7mOhm,L=20.9nH
+500KHz,-13nH,6.6 uF,14.3mOhm,C=2.919uF
+1MHz,12.083nH,-1.9uF,19.7mOhm,R=15.01mOhm
+10Mhz,17.8nH,-14.10nF,90.8mOhm,
+,,,,
+TDK B81123,,,,
+freq,ESL,C,ESR,equivalent series LCR analysis values
+1KHz,-5.37H,4.7nF,5.2Ohm,
+100KHz,-537uH,4.7nF,124mOhm,L=14.912nH
+500KHz,-21uH,4.7nF,48mOhm,C=4.794nF
+1MHz,-5uH,4.7nF,37mOhm,R=97mOhm
+10Mhz,-38nH,6.6nF,69mOhm,
+20MHz,1.7nH,-29.8nF,105mOhm,
+,,,,
+TDK B32922,,,,
+freq,ESL,C,ESR,equivalent series LCR analysis values
+1KHz,-133mH,190nF,564mOhm,
+100KHz,-13uH,190nF,31mOhm,L=6.355nH
+500KHz,-528nH,190nF,29mOhm,C=198.27nF
+1MHz,-126nH,200nF,37mOhm,R=46.14mOhm
+10Mhz,4.9nH,-48nF,69mOhm,
+20MHz,5.7nH,-11nF,132mOhm,
+,,,,
+SC Copper Plate (even after SC caliberation),,,,
+freq,ESL,C,ESR,equivalent series LCR analysis values
+1KHz,-5nH,72mF,-300uOhm,
+100KHz,-30pH,333uF,-300uOhm,L=-54pH
+500KHz,-40pH,261uF,-300uOhm,C=91F
+1MHz,-33pH,135uF,-451uOhm,R=254uOhm
+10Mhz,6.5pH,-2.9uF,"-1,4mOhm",
+20MHz,12.6pH,-1.7uF,-2.2mOhm,
+,,,,
+OC L=10.9mH  C=13fF  R=27kOhm,,,,
+,,,,
+TDK B32924 L=42.69nH  C=1.399uF  R=33.49mOhm,,,,
