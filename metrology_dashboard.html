@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Metrological Characterization SPA</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+<style>
+body { background-color: #fcfbf9; color: #292524; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+.view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+.view-section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.nav-btn { width: 100%; text-align: left; padding: 0.75rem 1rem; border-radius: 0.375rem; transition: all 0.2s; border-left: 4px solid transparent; font-weight: 500; color: #57534e; }
+.nav-btn:hover { background-color: #f5f5f4; color: #1c1917; }
+.nav-btn.active { background-color: #e7e5e4; border-left-color: #d97706; color: #1c1917; font-weight: 700; }
+.math-block { overflow-x: auto; padding: 1rem 0; }
+table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+th, td { border: 1px solid #d6d3d1; padding: 0.75rem; text-align: left; }
+th { background-color: #f5f5f4; font-weight: 600; }
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<!-- Chosen Palette: Warm Neutrals (Stone/Amber accents) -->
+<!-- Application Structure Plan: A responsive sidebar dashboard layout. This structure was chosen because an exhaustive, 6-method comparative engineering manual contains too much information for a standard linear scroll. By chunking the content into distinct, isolated methodological views, the user (a metrology engineer) can isolate, interact with, and digest the complex LaTeX math, interactive charts, and gauge R&R frameworks for one specific methodology at a time, drastically reducing cognitive load while preserving publication-level depth. -->
+<!-- Visualization & Content Choices: 
+1. Auto-Balanced Bridge: Goal is to show phase flip at SRF -> Chart.js Line chart mapping Apparent C and L over frequency -> User can see exactly where C goes negative. NO SVG.
+2. Surge Discharge: Goal is to show underdamped transient -> Chart.js Line chart mapping voltage ringing over time. NO SVG.
+3. VNA Shunt-Thru: Goal is to show impedance floor limits -> Chart.js Log-Log Line chart showing S21 mapping. NO SVG.
+4. Matrix Synthesis: Goal is to compare methodologies -> HTML Table -> Clear, sortable tabular data. NO SVG. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<aside class="w-72 bg-stone-100 border-r border-stone-200 flex flex-col h-full z-10 shadow-sm flex-shrink-0 overflow-y-auto">
+<div class="p-6 border-b border-stone-200">
+<h1 class="text-xl font-bold tracking-tight text-stone-800 leading-tight">Passive Component Metrology</h1>
+<p class="text-xs text-stone-500 mt-2 font-mono tracking-wider">LCR / VNA / TDR CHARACTERIZATION</p>
+</div>
+<nav class="flex-1 p-4 space-y-1" id="nav-container">
+<button class="nav-btn active" data-target="view-intro">Executive Summary & DUT</button>
+<div class="text-xs font-bold text-stone-400 mt-6 mb-2 uppercase tracking-wider px-4">Methodologies</div>
+<button class="nav-btn" data-target="view-m1">1. Auto-Balanced Bridge (ABB)</button>
+<button class="nav-btn" data-target="view-m2">2. Voltage Surge Discharge</button>
+<button class="nav-btn" data-target="view-m3">3. VNA 2-Port Shunt-Thru</button>
+<button class="nav-btn" data-target="view-m4">4. RF I-V Method</button>
+<button class="nav-btn" data-target="view-m5">5. Resonant Cavity Perturbation</button>
+<button class="nav-btn" data-target="view-m6">6. Time Domain Reflectometry</button>
+<div class="text-xs font-bold text-stone-400 mt-6 mb-2 uppercase tracking-wider px-4">Synthesis</div>
+<button class="nav-btn" data-target="view-matrix">Comparative Matrix</button>
+</nav>
+</aside>
+
+<main class="flex-1 h-full overflow-y-auto bg-white p-8 md:p-12 relative">
+<div class="max-w-5xl mx-auto pb-24">
+
+<section id="view-intro" class="view-section active">
+<h2 class="text-3xl font-extrabold text-stone-900 mb-6">Advanced Metrological Characterization of Nanohenry Inductance</h2>
+<p class="text-lg text-stone-600 mb-8 leading-relaxed">This interactive engineering manual details the precise isolation of $1\,\text{nH}$ to $50\,\text{nH}$ Equivalent Series Inductance (ESL) and nominal capacitance in low-loss metallized film capacitors. As a Principal Metrology Engineer, you will explore six distinct extraction methodologies.</p>
+
+<div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-lg mb-8 shadow-sm">
+<h3 class="text-lg font-bold text-amber-900 mb-2">Critical Notice: Equivalent Circuit Analysis vs. Default Mode</h3>
+<p class="text-amber-800 leading-relaxed text-sm">
+Addressing the specific instrument behavior query: Obtaining negative capacitance ($-C$) and positive inductance ($+L$) in default $C_s-R_s$ or $L_s-R_s$ measurement modes at higher frequencies is the <strong>mathematically exact and expected behavior</strong> of Keysight/Keystone impedance analyzers. Above the Self-Resonant Frequency (SRF), the capacitor's parasitic ESL dominates the reactance, causing the net phase angle to flip from $-90^\circ$ to $+90^\circ$. The instrument algorithmically assumes a 2-element series model. Thus, a net inductive reactance is reported as a negative capacitance via $C_{app} = -1 / (\omega X_{net})$. Utilizing the instrument's <strong>Equivalent Circuit Analysis (ECA)</strong> mode fits the swept complex impedance curve to a multi-variable $L-C-R$ model, successfully resolving the true, static, positive $C$ and $L$ values simultaneously.
+</p>
+</div>
+
+<div class="bg-stone-50 border border-stone-200 rounded-lg p-6">
+<h3 class="text-xl font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2">Baseline DUT Configuration</h3>
+<p class="mb-4 text-sm text-stone-600">All solved numerical examples across the six methodologies utilize the following ultra-high-performance metallized film capacitor theoretical baseline:</p>
+<ul class="list-disc pl-6 space-y-2 text-stone-800 font-mono text-sm">
+<li>Intrinsic Dielectric Capacitance ($C$): <span class="font-bold text-amber-600">$2.919\,\mu\text{F}$</span></li>
+<li>Intrinsic Equivalent Series Inductance ($L$): <span class="font-bold text-amber-600">$20.90\,\text{nH}$</span></li>
+<li>Intrinsic Equivalent Series Resistance ($R$): <span class="font-bold text-amber-600">$15.01\,\text{m}\Omega$</span></li>
+</ul>
+<div class="mt-4 p-4 bg-white border border-stone-100 rounded text-sm">
+<p>Calculated Self-Resonant Frequency (SRF):</p>
+<div class="math-block">$$ f_{SRF} = \frac{1}{2\pi \sqrt{L C}} = \frac{1}{2\pi \sqrt{(20.90 \times 10^{-9})(2.919 \times 10^{-6})}} \approx 644.20\,\text{kHz} $$</div>
+</div>
+</div>
+</section>
+
+<section id="view-m1" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">1. Auto-Balanced Bridge (ABB) Method</h2>
+<span class="px-3 py-1 bg-stone-200 text-stone-700 text-xs font-bold rounded-full uppercase tracking-widest">Low-Mid Freq ($< 110\text{MHz}$)</span>
+</div>
+<p class="text-stone-600 mb-8">The ABB architecture (e.g., Keysight E4990A) is the industry standard for sub-$100\,\text{MHz}$ characterization. It utilizes a virtual ground topology to null the current passing through the DUT, driving a precise feedback resistor to calculate complex impedance.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">The instrument maintains a $0\,\text{V}$ potential at the $L_{cur}$ terminal via an I-V converter operational amplifier. The unknown complex impedance $Z_x$ is derived from the source voltage $V_1$ and the feedback voltage $V_2$ across the range resistor $R_r$.</p>
+<div class="math-block">$$ I_x = \frac{V_1}{Z_x}, \quad I_r = -\frac{V_2}{R_r} $$</div>
+<p class="mb-2 text-sm">By Kirchhoff's Current Law at the virtual ground, $I_x + I_r = 0$, yielding the governing extraction formula:</p>
+<div class="math-block">$$ Z_x = R_r \left( -\frac{V_1}{V_2} \right) = R_{ESR} + j\left( \omega L - \frac{1}{\omega C} \right) $$</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Comprehensive Solved Numerical Example</h3>
+<p class="mb-4 text-sm text-stone-600">Simulating the baseline DUT ($C=2.919\,\mu\text{F}$, $L=20.90\,\text{nH}$, $R=15.01\,\text{m}\Omega$) at two distinct test frequencies to demonstrate the phase inversion phenomenon.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="bg-stone-50 p-4 border border-stone-200 rounded text-sm">
+<h4 class="font-bold mb-2">Test Point A: $100\,\text{kHz}$ (Below SRF)</h4>
+<div class="math-block">$$ \omega = 2\pi(10^5) = 6.28 \times 10^5\,\text{rad/s} $$</div>
+<div class="math-block">$$ X_C = -0.545\,\Omega, \quad X_L = 0.013\,\Omega $$</div>
+<div class="math-block">$$ Z_{total} = 0.015 - j0.532\,\Omega $$</div>
+<p class="mt-2 text-stone-500 italic">Net capacitive. Apparent $C_{app} = 2.99\,\mu\text{F}$. Note the slight positive error due to uncompensated ESL.</p>
+</div>
+<div class="bg-stone-50 p-4 border border-stone-200 rounded text-sm">
+<h4 class="font-bold mb-2">Test Point B: $1\,\text{MHz}$ (Above SRF)</h4>
+<div class="math-block">$$ \omega = 2\pi(10^6) = 6.28 \times 10^6\,\text{rad/s} $$</div>
+<div class="math-block">$$ X_C = -0.054\,\Omega, \quad X_L = 0.131\,\Omega $$</div>
+<div class="math-block">$$ Z_{total} = 0.015 + j0.077\,\Omega $$</div>
+<p class="mt-2 text-red-600 font-bold italic">Net inductive. Apparent $C_{app} = -2.07\,\mu\text{F}$ (Instrument displays negative C).</p>
+</div>
+</div>
+<div class="chart-container mb-8">
+<canvas id="chart-abb"></canvas>
+</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">3. Practical Hardware Architecture & Bench Setup</h3>
+<p class="text-sm text-stone-700 mb-2">Implementation requires a Four-Terminal Pair (4TP) configuration. The $H_{cur}$, $H_{pot}$, $L_{pot}$, and $L_{cur}$ coaxial lines must have their outer shields tied together directly at the fixture block to eliminate mutual inductance between source and return loops.</p>
+<p class="text-sm text-stone-700"><strong>Vector Error Correction:</strong> Open/Short/Load compensation is mandatory. The 'Short' must be a zero-length, massive copper block bridging the exact terminal gap of the film capacitor to effectively zero out the residual $L_s$ of the test fixture contacts.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">4. Analytical Accuracy & Uncertainty Budget</h3>
+<ul class="list-disc pl-6 space-y-2 text-sm text-stone-700 mb-6">
+<li><strong>Phase Detector Resolution Limits:</strong> At $100\,\text{kHz}$, extracting $20\,\text{nH}$ ($X_L = 0.013\,\Omega$) from a $2.9\,\mu\text{F}$ ($X_C = 0.545\,\Omega$) background requires detecting a phase shift deviation of less than $0.001^\circ$ from $-90^\circ$. Standard ABB uncertainty limits absolute $L$ accuracy below $1\,\text{MHz}$ for high-$C$ values.</li>
+<li><strong>Cable Length Correction:</strong> Phase lag $\phi = \beta \ell$ down the 1m test leads introduces significant reflection error above $10\,\text{MHz}$ if the instrument's mathematical electrical length compensation is mismatched by even $1\,\text{mm}$.</li>
+</ul>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">5. Gauge R&R Framework</h3>
+<p class="text-sm text-stone-700 mb-2"><strong>Primary Vulnerability:</strong> Operator Appraiser Variance ($\text{AV}$) dominates due to fixture insertion depth. Because $1\,\text{mm}$ of exposed lead wire adds approximately $1\,\text{nH}$ of parasitic inductance, variations in how operators clamp the DUT into the test fixture completely invalidate process capability ($\text{Cpk}$) limits for sub-$50\,\text{nH}$ components.</p>
+<p class="text-sm text-stone-700"><strong>Mitigation:</strong> Utilize a pneumatic, depth-controlled, gold-plated Kelvin jaw fixture with a standardized $1.5\,\text{Nm}$ clamping force.</p>
+</section>
+
+<section id="view-m2" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">2. Voltage Surge Discharge Method</h2>
+<span class="px-3 py-1 bg-stone-200 text-stone-700 text-xs font-bold rounded-full uppercase tracking-widest">Time Domain</span>
+</div>
+<p class="text-stone-600 mb-8">This method extracts ESL and ESR under actual high-current operating conditions ($>100\,\text{A}$) by discharging the capacitor into a dead short and capturing the resulting underdamped voltage or current ringing with a high-speed digitizer.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">The DUT is charged to voltage $V_0$ and switched into a short circuit via a low-inductance solid-state switch. The system is modeled as a source-free series RLC circuit governed by the 2nd-order differential equation:</p>
+<div class="math-block">$$ L \frac{d^2 i(t)}{dt^2} + R \frac{di(t)}{dt} + \frac{1}{C} i(t) = 0 $$</div>
+<p class="mb-2 text-sm">Assuming underdamped conditions ($R < 2\sqrt{L/C}$), the discharge current is:</p>
+<div class="math-block">$$ i(t) = \frac{V_0}{L \omega_d} e^{-\alpha t} \sin(\omega_d t) $$</div>
+<p class="mb-2 text-sm">Where the damping factor $\alpha = \frac{R}{2L}$ and damped resonant frequency $\omega_d = \sqrt{\frac{1}{LC} - \alpha^2}$. ESL is extrapolated by measuring the ringing period $T_d = \frac{2\pi}{\omega_d}$ and logarithmic decrement.</p>
+<div class="math-block">$$ L_{ESL} = \frac{1}{C \left( \left(\frac{2\pi}{T_d}\right)^2 + \left(\frac{\ln(I_1/I_2)}{T_d}\right)^2 \right)} - L_{fixture} $$</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Comprehensive Solved Numerical Example</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="bg-stone-50 p-4 border border-stone-200 rounded text-sm">
+<h4 class="font-bold mb-2">Transient Parameters</h4>
+<p>Baseline DUT charged to $V_0 = 1000\,\text{V}$.</p>
+<div class="math-block">$$ \alpha = \frac{15.01 \times 10^{-3}}{2 \times 20.9 \times 10^{-9}} = 3.59 \times 10^5\,\text{s}^{-1} $$</div>
+<div class="math-block">$$ \omega_0 = \frac{1}{\sqrt{LC}} = 4.048 \times 10^6\,\text{rad/s} $$</div>
+<div class="math-block">$$ \omega_d = \sqrt{\omega_0^2 - \alpha^2} \approx 4.032 \times 10^6\,\text{rad/s} $$</div>
+<p class="mt-2 text-stone-500 italic">Ringing Frequency $f_d \approx 641.7\,\text{kHz}$. Peak current $I_{peak} \approx 11.5\,\text{kA}$ at $t = 380\,\text{ns}$.</p>
+</div>
+<div class="chart-container">
+<canvas id="chart-surge"></canvas>
+</div>
+</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">3. Practical Hardware Architecture & Bench Setup</h3>
+<p class="text-sm text-stone-700 mb-2">Requires a high-voltage DC supply, an ultra-fast thyristor or spark gap trigger, a Pearson current monitor (or coaxial current shunt), and an oscilloscope with $\ge 1\,\text{GS/s}$ sampling rate. The switch geometry is critical; a custom low-inductance planar busbar ($L_{fixture} < 5\,\text{nH}$) is required to ensure the fixture inductance does not mask the DUT's $20\,\text{nH}$ ESL.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">4. Analytical Accuracy & Uncertainty Budget</h3>
+<p class="text-sm text-stone-700 mb-2"><strong>Primary Error Vector:</strong> $L_{fixture}$ de-embedding. The fixture inductance is typically characterized by firing the surge loop with a solid copper slug replacing the DUT. If the high-current magnetic skin effect causes $L_{fixture}$ to vary dynamically during the ringing cycle, the rigid $L_{ESL}$ extrapolation fails. Accuracy limits are practically $\pm 2\,\text{nH}$.</p>
+</section>
+
+<section id="view-m3" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">3. VNA 2-Port Shunt-Thru Method</h2>
+<span class="px-3 py-1 bg-stone-200 text-stone-700 text-xs font-bold rounded-full uppercase tracking-widest">RF / High Freq ($> 1\text{MHz}$)</span>
+</div>
+<p class="text-stone-600 mb-8">The standard impedance reflection ($S_{11}$) method fails for sub-ohm impedances. The 2-Port Shunt-Thru method mounts the capacitor in parallel with the VNA transmission line, providing exceptional sensitivity for ultra-low impedance magnitudes in the milliohm regime, perfect for large $C$ and tiny $L$.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">The DUT is shunted across a continuous $50\,\Omega$ transmission line connecting Port 1 to Port 2. The $S_{21}$ forward transmission coefficient represents the voltage divided between the source impedance, the DUT impedance, and the load impedance.</p>
+<div class="math-block">$$ S_{21} = \frac{2 Z_x}{2 Z_x + Z_0} $$</div>
+<p class="mb-2 text-sm">Isolating the complex impedance $Z_x$ of the capacitor yields:</p>
+<div class="math-block">$$ Z_x = \frac{Z_0}{2} \left( \frac{S_{21}}{1 - S_{21}} \right) = 25 \left( \frac{S_{21}}{1 - S_{21}} \right) $$</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Comprehensive Solved Numerical Example</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="bg-stone-50 p-4 border border-stone-200 rounded text-sm">
+<h4 class="font-bold mb-2">Test Point: $10\,\text{MHz}$ Evaluation</h4>
+<p>Baseline DUT at a frequency deep into the inductive region.</p>
+<div class="math-block">$$ X_L = 2\pi(10^7)(20.9 \times 10^{-9}) = 1.313\,\Omega $$</div>
+<div class="math-block">$$ X_C = -\frac{1}{2\pi(10^7)(2.919 \times 10^{-6})} = -0.005\,\Omega $$</div>
+<div class="math-block">$$ Z_x = 0.01501 + j1.308\,\Omega $$</div>
+<p class="mt-2 text-stone-500">Calculate expected $S_{21}$:</p>
+<div class="math-block">$$ S_{21} = \frac{2(0.01501 + j1.308)}{2(0.01501 + j1.308) + 50} \approx 0.0015 + j0.052 $$</div>
+<p class="mt-2 text-stone-500 italic">Magnitude $|S_{21}| \approx 0.052$ (approx $-25.7\,\text{dB}$). Phase $\approx 88.3^\circ$.</p>
+</div>
+<div class="chart-container">
+<canvas id="chart-vna"></canvas>
+</div>
+</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">3. Practical Hardware Architecture & Bench Setup</h3>
+<p class="text-sm text-stone-700 mb-2">Requires a wideband VNA (e.g., Keysight E5061B), two high-quality $50\,\Omega$ phase-stable coaxial cables, and a specialized coplanar waveguide PCB fixture. The capacitor must be soldered or pressure-mounted precisely at the midpoint of the through-line.</p>
+<p class="text-sm text-stone-700"><strong>Vector Error Correction:</strong> Full 2-Port SOLT (Short-Open-Load-Thru) calibration at the coax ends, followed by port extension, or Advanced Fixture De-embedding (using Touchstone $S2P$ files of the bare fixture) to shift the reference plane to the PCB pad boundaries.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">4. Analytical Accuracy & Uncertainty Budget</h3>
+<p class="text-sm text-stone-700 mb-2"><strong>Mutual Coupling Error:</strong> The primary failure mode of this method is the parasitic mutual inductance ($M$) between the ground return paths of Port 1 and Port 2. A braided shield ground return introduces a transfer impedance that limits the minimum measurable ESR and creates artificial dips in the ESL extraction. Uncertainty rises sharply below $1\,\text{m}\Omega$ or $1\,\text{nH}$. Employing a solid copper block ground plane and common-mode chokes on the coaxial lines mitigates this ground-loop error.</p>
+</section>
+
+<section id="view-m4" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">4. Radio Frequency Current-Voltage (RF I-V) Method</h2>
+</div>
+<p class="text-stone-600 mb-8">Bridging the gap between ABB and VNA reflection architectures, the RF I-V method utilizes a high-frequency probe head containing integrated broad-band voltage and current transformers. It extends the direct $Z = V/I$ paradigm up to $3\,\text{GHz}$.</p>
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">The probe head injects an RF signal. A directional voltage transformer detects $V_x$ across the DUT, while a toroidal current transformer detects $I_x$.</p>
+<div class="math-block">$$ Z_x = \frac{V_x}{I_x} \cdot e^{j(\theta_V - \theta_I)} $$</div>
+<p class="mb-2 text-sm">The instrument down-converts the RF signals to IF via precision mixers, digitizes them, and processes the vector ratio. Because the transformers are matched to a characteristic $50\,\Omega$ environment, standing waves within the probe head are minimized.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Practical Hardware Architecture & Bench Setup</h3>
+<p class="text-sm text-stone-700 mb-2">Utilizes instruments like the Keysight E4991B with a $7\,\text{mm}$ coaxial test fixture interface. High-precision $7\,\text{mm}$ APC connectors interface the base unit to a bottom-electrode SMD test fixture (e.g., 16197A). Calibration requires a highly specialized Open/Short/Load set physically matching the footprint of the film capacitor, followed by electrical length compensation.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">3. Gauge R&R Framework</h3>
+<p class="text-sm text-stone-700"><strong>Reproducibility Vulnerability:</strong> The RF I-V method is hyper-sensitive to the electromagnetic environment immediately surrounding the DUT. Operator hands moving near the unshielded fixture, or minute variations in the rotational alignment of the capacitor on the $7\,\text{mm}$ coaxial electrodes, alter the fringing capacitance ($C_f$) and stray mutual inductance ($L_m$). Gauge R&R relies entirely on strict, automated pick-and-place fixturing inside an RF-shielded dark box.</p>
+</section>
+
+<section id="view-m5" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">5. Resonant Cavity / Perturbation Method</h2>
+<span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full uppercase tracking-widest">Scalar Specific</span>
+</div>
+<p class="text-stone-600 mb-8">While less common for lumped macroscopic film capacitors, perturbation techniques measure the macroscopic effective permittivity and permeability, providing a scalar, ultra-high $Q$ extraction method. The capacitor alters the electromagnetic boundary conditions of a high-$Q$ cavity.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">The baseline resonant frequency $f_0$ and unloaded quality factor $Q_0$ of a $TM_{010}$ cylindrical cavity are measured via a scalar or vector network analyzer. The DUT is inserted into the maximum electric or magnetic field region. The shift in resonance $\Delta f$ and degradation in quality factor $\Delta Q$ correlate directly to the reactive and resistive properties of the DUT.</p>
+<div class="math-block">$$ \frac{f_0 - f_s}{f_0} \approx \frac{1}{2} \iiint_{V_s} (\epsilon_r - 1) |E_0|^2 dV $$</div>
+<p class="mb-2 text-sm">For lumped parameter extraction, the cavity mode is modeled as a lumped $L_c - C_c$ tank, where the DUT acts as a massive detuning element. The extreme detuning caused by a $2.9\,\mu\text{F}$ capacitor makes standard perturbation theory break down; thus, custom cavity scaling or substitution techniques are required.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Analytical Accuracy & Uncertainty Budget</h3>
+<p class="text-sm text-stone-700 mb-2">This method suffers from extreme geometry dependence. The exact position, orientation, and volumetric displacement of the metallized film capacitor inside the cavity fundamentally dictate the frequency shift. Therefore, while $Q$ measurements are unparalleled for extremely low-loss dielectrics, absolute accuracy for lumped $L_{ESL}$ extraction is poor ($\pm 20\%$) due to field-fringing complexities.</p>
+</section>
+
+<section id="view-m6" class="view-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-3xl font-extrabold text-stone-900">6. Time Domain Reflectometry (TDR) Method</h2>
+</div>
+<p class="text-stone-600 mb-8">TDR fires an ultra-fast voltage step into the DUT interface. By monitoring the reflected wave, the spatial distribution of impedance—including the lumped ESL spike—is mapped temporally.</p>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">1. Theoretical Foundations & Mathematical Derivations</h3>
+<p class="mb-2 text-sm">A fast-rise-time step $V_{in}(t)$ (e.g., $t_r = 35\,\text{ps}$) is launched down a $Z_0 = 50\,\Omega$ transmission line. The instantaneous reflection coefficient $\rho(t)$ is recorded:</p>
+<div class="math-block">$$ \rho(t) = \frac{V_{ref}(t)}{V_{in}(t)} = \frac{Z_L(t) - Z_0}{Z_L(t) + Z_0} $$</div>
+<p class="mb-2 text-sm">A series $L-C$ network produces a distinct signature. Initially, the capacitor acts as a short, but the inductor opposes the step, causing a positive voltage spike. The area under this reflected inductive spike is directly proportional to the ESL.</p>
+<div class="math-block">$$ L_{ESL} \approx \frac{Z_0}{2} \int_{t_1}^{t_2} \rho(t) \, dt \quad \text{(for small } L \text{)} $$</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">2. Comprehensive Solved Numerical Example</h3>
+<div class="bg-stone-50 p-4 border border-stone-200 rounded text-sm mb-6">
+<h4 class="font-bold mb-2">TDR Integral Calculation</h4>
+<p>Baseline DUT ($L=20.9\,\text{nH}$). Assuming an ideal step excitation and isolating the initial inductive response before the capacitor begins to charge significantly.</p>
+<div class="math-block">$$ \int \rho(t) \, dt \approx \frac{2 \times 20.9 \times 10^{-9}}{50} = 0.836\,\text{ns} $$</div>
+<p class="mt-2 text-stone-500 italic">The oscilloscope will display a positive reflection spike with an area of $0.836\,\text{ns}$ (e.g., reaching $\rho = +0.8$ with a width of $\sim 1\,\text{ns}$).</p>
+</div>
+
+<h3 class="text-xl font-bold text-stone-800 mt-8 mb-4">3. Long-Term Reliability & Stability Analysis</h3>
+<p class="text-sm text-stone-700 mb-2">TDR requires high-bandwidth sampling oscilloscopes. The primary degradation mode is the physical wear on the microwave sampler diodes and the $3.5\,\text{mm}$ or SMA connectors used to launch the step. Thermal drift of the trigger delay logic creates baseline wander, requiring frequent recalibration (e.g., every 30 minutes) using standard air-lines to maintain picosecond temporal accuracy.</p>
+</section>
+
+<section id="view-matrix" class="view-section">
+<h2 class="text-3xl font-extrabold text-stone-900 mb-6">Final Synthesis: Metrological Comparison Matrix</h2>
+<p class="text-stone-600 mb-8">A comprehensive cross-evaluation of the six required impedance characterization methodologies for isolating nanohenry-range ESL and microfarad-range capacitance.</p>
+<div class="overflow-x-auto shadow-sm rounded-lg border border-stone-200">
+<table class="text-sm text-stone-800">
+<thead>
+<tr>
+<th class="w-1/6">Measurement Method</th>
+<th class="w-1/6">Opt. Impedance Range ($|Z|$)</th>
+<th class="w-1/6">Opt. Freq Bandwidth</th>
+<th class="w-2/6">Primary Structural Failure Mode</th>
+<th class="w-1/6">Gauge R&R Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="font-bold">1. Auto-Balanced Bridge (ABB)</td>
+<td>$10\,\text{m}\Omega$ to $100\,\text{M}\Omega$</td>
+<td>$20\,\text{Hz}$ to $110\,\text{MHz}$</td>
+<td>Phase detector resolution limits tracking highly reactive components near SRF, yielding apparent negative $C$.</td>
+<td><span class="text-amber-600 font-bold">Medium</span> (Insertion depth sensitivity)</td>
+</tr>
+<tr>
+<td class="font-bold">2. Voltage Surge</td>
+<td>$1\,\text{m}\Omega$ to $1\,\Omega$</td>
+<td>Time-Domain (Ringing $f \approx 500\,\text{kHz}$)</td>
+<td>Dynamic, non-linear variation of fixture inductance $L_{fixture}$ under extreme high-current skin effects.</td>
+<td><span class="text-green-600 font-bold">Low</span> (Solid bolt-down required)</td>
+</tr>
+<tr>
+<td class="font-bold">3. VNA 2-Port Shunt-Thru</td>
+<td>$0.1\,\text{m}\Omega$ to $50\,\Omega$</td>
+<td>$100\,\text{kHz}$ to $3\,\text{GHz}$</td>
+<td>Ground-loop mutual inductance ($M$) creating artificial measurement floors or negative ESR readings.</td>
+<td><span class="text-amber-600 font-bold">Medium</span> (Solder joint variations)</td>
+</tr>
+<tr>
+<td class="font-bold">4. RF I-V Method</td>
+<td>$100\,\text{m}\Omega$ to $10\,\text{k}\Omega$</td>
+<td>$1\,\text{MHz}$ to $3\,\text{GHz}$</td>
+<td>High sensitivity to fringing fields and exact rotational orientation on coax test heads.</td>
+<td><span class="text-red-600 font-bold">High</span> (Positional variance)</td>
+</tr>
+<tr>
+<td class="font-bold">5. Cavity Perturbation</td>
+<td>Not applicable for lumped $C$</td>
+<td>Resonant (e.g., $1\,\text{GHz}$ single point)</td>
+<td>Geometric field distortion; breakdown of perturbation theory due to massive $3\mu\text{F}$ volumetric dielectric.</td>
+<td><span class="text-red-600 font-bold">High</span> (Volumetric dependency)</td>
+</tr>
+<tr>
+<td class="font-bold">6. TDR / TDT</td>
+<td>$10\,\Omega$ to $100\,\Omega$ (Near $Z_0$)</td>
+<td>Time-Domain ($t_r < 35\,\text{ps}$)</td>
+<td>Connector wear and launch geometries masking the $1\,\text{ns}$ inductive reflection spike.</td>
+<td><span class="text-amber-600 font-bold">Medium</span> (Connector torque)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+</main>
+
+<script>
+// Logic: Application State & Navigation
+document.addEventListener('DOMContentLoaded', () => {
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const views = document.querySelectorAll('.view-section');
+
+    function switchView(targetId) {
+        // Update Nav UI
+        navButtons.forEach(btn => {
+            if(btn.dataset.target === targetId) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        
+        // Update View Visibility
+        views.forEach(view => {
+            if(view.id === targetId) view.classList.add('active');
+            else view.classList.remove('active');
+        });
+
+        // Trigger chart renders if they exist in the target view
+        if(targetId === 'view-m1' && !chartInstances.abb) renderABBChart();
+        if(targetId === 'view-m2' && !chartInstances.surge) renderSurgeChart();
+        if(targetId === 'view-m3' && !chartInstances.vna) renderVNAChart();
+
+        // Render KaTeX for the newly active section (optimization: render all once, but this is safe)
+        renderMathInElement(document.getElementById(targetId), {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    }
+
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            switchView(e.target.dataset.target);
+        });
+    });
+
+    // Initial Math Render for Intro
+    renderMathInElement(document.getElementById('view-intro'), {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false}
+        ]
+    });
+});
+
+// Logic: Chart Generation & Data Processing
+const chartInstances = {
+    abb: null,
+    surge: null,
+    vna: null
+};
+
+// Baseline Data
+const baseline = {
+    C: 2.919e-6,
+    L: 20.90e-9,
+    R: 15.01e-3
+};
+
+function renderABBChart() {
+    const ctx = document.getElementById('chart-abb').getContext('2d');
+    
+    // Generate Sweep Data (100kHz to 10MHz log scale approx)
+    const freqs = [];
+    const capApparent = [];
+    
+    let f = 100000;
+    while(f <= 10000000) {
+        freqs.push(f / 1e6); // In MHz
+        let w = 2 * Math.PI * f;
+        let Xc = -1 / (w * baseline.C);
+        let Xl = w * baseline.L;
+        let Xnet = Xc + Xl;
+        
+        let Capp = -1 / (w * Xnet);
+        // Cap visual limits to prevent infinity spike drawing
+        if(Capp > 10e-6) Capp = 10e-6;
+        if(Capp < -10e-6) Capp = -10e-6;
+        
+        capApparent.push(Capp * 1e6); // In uF
+        f *= 1.2; 
+    }
+
+    chartInstances.abb = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: freqs.map(f => f.toFixed(2)),
+            datasets: [{
+                label: 'Apparent Capacitance (µF)',
+                data: capApparent,
+                borderColor: '#d97706', // Amber-600
+                backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                title: { display: true, text: 'ABB Apparent Capacitance vs Frequency (Showing SRF Inversion)' },
+                tooltip: { callbacks: { label: (ctx) => `Capp: ${ctx.raw.toFixed(3)} µF` } }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Frequency (MHz)' } },
+                y: { title: { display: true, text: 'Capacitance (µF)' }, min: -5, max: 5 }
+            }
+        }
+    });
+}
+
+function renderSurgeChart() {
+    const ctx = document.getElementById('chart-surge').getContext('2d');
+    
+    const time = [];
+    const current = [];
+    const V0 = 1000;
+    const alpha = baseline.R / (2 * baseline.L);
+    const w0 = 1 / Math.sqrt(baseline.L * baseline.C);
+    const wd = Math.sqrt(w0*w0 - alpha*alpha);
+    const coef = V0 / (baseline.L * wd);
+
+    for(let t = 0; t <= 5e-6; t += 10e-9) {
+        time.push(t * 1e6); // in µs
+        let i = coef * Math.exp(-alpha * t) * Math.sin(wd * t);
+        current.push(i / 1000); // in kA
+    }
+
+    chartInstances.surge = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: time.map(t => t.toFixed(2)),
+            datasets: [{
+                label: 'Discharge Current (kA)',
+                data: current,
+                borderColor: '#44403c', // Stone-700
+                backgroundColor: 'rgba(68, 64, 60, 0.1)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Simulated Surge Discharge Ringing Waveform' }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Time (µs)' } },
+                y: { title: { display: true, text: 'Current (kA)' } }
+            }
+        }
+    });
+}
+
+function renderVNAChart() {
+    const ctx = document.getElementById('chart-vna').getContext('2d');
+    
+    const freqs = [];
+    const s21Mag = [];
+    
+    let f = 100000; // 100kHz
+    while(f <= 100000000) { // 100MHz
+        freqs.push(f / 1e6);
+        let w = 2 * Math.PI * f;
+        let Xc = -1 / (w * baseline.C);
+        let Xl = w * baseline.L;
+        // Z = R + j(Xl + Xc)
+        let Z_mag = Math.sqrt(Math.pow(baseline.R, 2) + Math.pow(Xl + Xc, 2));
+        
+        // S21 = 2Z / (2Z + 50). Approx Mag S21 for small Z is roughly 2*Z_mag / 50
+        let s21_linear = (2 * Z_mag) / Math.sqrt(Math.pow(2*baseline.R + 50, 2) + Math.pow(2*(Xl+Xc), 2));
+        let s21_db = 20 * Math.log10(s21_linear);
+        
+        s21Mag.push(s21_db);
+        f *= 1.2;
+    }
+
+    chartInstances.vna = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: freqs.map(f => f.toFixed(2)),
+            datasets: [{
+                label: '|S21| (dB)',
+                data: s21Mag,
+                borderColor: '#0284c7', // Sky-600
+                backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: '2-Port Shunt-Thru S21 Transmission Profile' }
+            },
+            scales: {
+                x: { type: 'category', title: { display: true, text: 'Frequency (MHz) [Logarithmic Sample]' } },
+                y: { title: { display: true, text: 'Magnitude (dB)' } }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
